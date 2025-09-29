@@ -1,0 +1,126 @@
+.footer {
+  background: rgba(20, 20, 20, 0.65);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+  margin-top: auto;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #d1d5db;
+}
+
+/* Container */
+.footer-container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 40px 22px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 60px;
+  align-items: flex-start;
+}
+
+/* Brand Section */
+.footer-brand {
+  flex: 1;
+  min-width: 280px;
+}
+.footer-brand h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+.footer-brand p {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Links Section */
+.footer-links {
+  display: flex;
+  gap: 60px;
+  flex-wrap: wrap;
+}
+.footer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 120px;
+}
+.footer-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.footer-section a {
+  font-size: 13px;
+  color: #a1a1a6;
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.footer-section a:hover,
+.footer-section a:focus {
+  color: #4c8df6;
+  transform: translateY(-1px);
+  outline: none;
+}
+.footer-section a:visited {
+  color: #a1a1a6;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+  background: rgba(20, 20, 20, 0.65);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.footer-bottom .footer-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+}
+.footer-bottom p {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* Responsive / Mobile */
+@media (max-width: 768px) {
+  .footer-container {
+    padding: 0 16px;
+    flex-direction: column;
+    gap: 32px;
+    align-items: center;
+  }
+
+  .footer-brand h3 {
+    font-size: 20px;
+  }
+
+  .footer-links {
+    gap: 32px;
+    justify-content: center;
+  }
+
+  .footer-section {
+    text-align: center;
+    min-width: auto;
+  }
+
+  .footer-bottom .footer-container {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+}
