@@ -1,84 +1,393 @@
 .disaster-detail {
-  padding: 28px;
-  color: #f5f5f5; 
+  padding: 2rem;
+  color: #f5f5f5;
   min-height: 60vh;
-  background-color: #1f1f1f;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  margin: 1rem;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-state h2 {
+  margin-bottom: 1rem;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  color: #2563eb;
+}
+
+.breadcrumb-separator {
+  margin: 0 0.5rem;
+  color: #a1a1a6;
+}
+
+.breadcrumb-current {
+  color: #a1a1a6;
 }
 
 .detail-hero {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 3rem;
+}
+
+.hero-card {
+  max-width: none;
 }
 
 .detail-card {
-  background: #2a2a2a; 
-  padding: 18px;
+  background: rgba(42, 42, 42, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 1.5rem;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #f5f5f5;
-  max-width: 820px;
-  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
   transition: transform 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .detail-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+.disaster-header {
+  margin-bottom: 1.5rem;
+}
+
 .disaster-title {
-  margin: 0 0 8px 0;
-  font-size: 1.4rem;
+  margin: 0 0 1rem 0;
+  font-size: 2.5rem;
   font-weight: 700;
+  line-height: 1.2;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-.disaster-meta {
-  margin: 6px 0;
-  color: #a1a1a6; 
-  font-size: 0.95rem;
+.disaster-badges {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-/* Sections inside detail page */
-.section {
-  margin-top: 22px;
+.disaster-type {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.severity-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.severity-high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.severity-medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.severity-low {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.disaster-details {
+  margin-bottom: 2rem;
+}
+
+.detail-item {
+  margin: 0.75rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.detail-item strong {
+  color: #ffffff;
+  min-width: 80px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.detail-item .status {
+  margin-left: 0.5rem;
+}
+
+.description {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.description p {
+  margin: 0.5rem 0 0 0;
+  color: #e5e7eb;
+  line-height: 1.6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.detail-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .section-title {
-  font-size: 1.05rem;
-  margin: 0 0 12px 0;
-  color: #f5f5f5;
+  font-size: 1.5rem;
+  margin: 0;
+  color: #ffffff;
   font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-/* Lists of camps / donations */
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.empty-section {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.empty-section p {
+  margin: 0.5rem 0;
+}
+
 .detail-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
 }
 
-/* Donation item styles */
-.detail-card p {
-  margin: 6px 0;
+/* Camp Card Styles */
+.camp-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.camp-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  flex: 1;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.occupancy-indicator {
+  text-align: right;
+  min-width: 80px;
+}
+
+.occupancy-text {
+  font-size: 0.85rem;
   color: #a1a1a6;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.occupancy-bar {
+  width: 60px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-left: auto;
+}
+
+.occupancy-fill {
+  height: 100%;
+  background: #3b82f6;
+  transition: width 0.3s ease;
+}
+
+.camp-details p {
+  margin: 0.5rem 0;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.card-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Donation Card Styles */
+.donation-card {
+  padding: 1rem;
+}
+
+.donation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.donor-name {
+  color: #ffffff;
   font-size: 0.95rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* Small helper */
-.text-muted {
+.donation-date {
   color: #a1a1a6;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.donation-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.donation-type {
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.donation-amount {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.show-more {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1rem;
+}
+
+.status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-resolved {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-monitoring {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 /* Responsive adjustments */
-@media (max-width: 780px) {
-  .detail-hero {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+@media (max-width: 768px) {
+  .disaster-detail {
+    padding: 1rem;
   }
+
+  .disaster-title {
+    font-size: 2rem;
+  }
+
   .detail-list {
     grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .camp-card .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .occupancy-indicator {
+    text-align: left;
+    width: 100%;
+  }
+
+  .occupancy-bar {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .donation-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .donation-date {
+    align-self: flex-start;
   }
 }
