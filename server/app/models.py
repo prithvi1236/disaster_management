@@ -1,7 +1,39 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+import enum
+
+
+class UserRole(enum.Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+
+class RequestStatus(enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    FULFILLED = "fulfilled"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    user_id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), nullable=False, unique=True, index=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    full_name = Column(String(255), nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    created_disasters = relationship("Disaster", back_populates="created_by_user")
+    created_camps = relationship("Camp", back_populates="created_by_user")
+    managed_assignments = relationship("VolunteerAssignment", back_populates="assigned_by_user")
 
 
 class Disaster(Base):
@@ -16,12 +48,15 @@ class Disaster(Base):
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=True)
     description = Column(Text, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who created
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     camps = relationship("Camp", back_populates="disaster")
     donations = relationship("Donation", back_populates="disaster")
+    resource_requests = relationship("ResourceRequest", back_populates="disaster")
+    created_by_user = relationship("User", back_populates="created_disasters")
 
 
 class Camp(Base):
@@ -35,11 +70,15 @@ class Camp(Base):
     contact_info = Column(String(255), nullable=True)
     facilities = Column(Text, nullable=True)
     disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who created
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     disaster = relationship("Disaster", back_populates="camps")
+    resource_requests = relationship("ResourceRequest", back_populates="camp")
+    volunteer_assignments = relationship("VolunteerAssignment", back_populates="camp")
+    created_by_user = relationship("User", back_populates="created_camps")
 
 
 class Donation(Base):
@@ -77,3 +116,63 @@ class Volunteer(Base):
     disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    volunteer_assignments = relationship("VolunteerAssignment", back_populates="volunteer")
+
+
+class ResourceRequest(Base):
+    __tablename__ = "resource_requests"
+
+    request_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    resource_type = Column(String(100), nullable=False)  # Food, Medical, Shelter, etc.
+    quantity_needed = Column(String(255), nullable=False)
+    priority_level = Column(String(50), default="Medium")  # Low, Medium, High, Critical
+    status = Column(Enum(RequestStatus), default=RequestStatus.PENDING, nullable=False)
+    
+    # Can be requested for disaster or specific camp
+    disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=True)
+    camp_id = Column(Integer, ForeignKey("camps.camp_id"), nullable=True)
+    
+    requested_by = Column(String(255), nullable=True)  # Who made the request
+    approved_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who approved
+    
+    request_date = Column(DateTime, server_default=func.now())
+    approved_date = Column(DateTime, nullable=True)
+    fulfilled_date = Column(DateTime, nullable=True)
+    
+    notes = Column(Text, nullable=True)  # Admin notes
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    disaster = relationship("Disaster", back_populates="resource_requests")
+    camp = relationship("Camp", back_populates="resource_requests")
+
+
+class VolunteerAssignment(Base):
+    __tablename__ = "volunteer_assignments"
+
+    assignment_id = Column(Integer, primary_key=True, index=True)
+    volunteer_id = Column(Integer, ForeignKey("volunteers.volunteer_id"), nullable=False)
+    camp_id = Column(Integer, ForeignKey("camps.camp_id"), nullable=True)
+    disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=False)
+    
+    assigned_by = Column(Integer, ForeignKey("users.user_id"), nullable=False)  # Admin who assigned
+    assignment_date = Column(DateTime, server_default=func.now())
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    
+    role = Column(String(100), nullable=True)  # Role assigned (Medical Aid, Food Distribution, etc.)
+    status = Column(String(50), default="Active")  # Active, Completed, Cancelled
+    notes = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    volunteer = relationship("Volunteer", back_populates="volunteer_assignments")
+    camp = relationship("Camp", back_populates="volunteer_assignments")
+    assigned_by_user = relationship("User", back_populates="managed_assignments")
