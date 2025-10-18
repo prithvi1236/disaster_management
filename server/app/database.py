@@ -22,6 +22,15 @@ async def create_tables():
     Base.metadata.create_all(bind=engine)
 
 
+async def seed_demo_data():
+    """Seed database with demo data"""
+    try:
+        from app.seed_data import seed_database
+        seed_database()
+    except Exception as e:
+        print(f"Warning: Could not seed demo data: {e}")
+
+
 def get_db():
     """Get database session for dependency injection"""
     db = SessionLocal()

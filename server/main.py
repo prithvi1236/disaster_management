@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.database import create_tables
+from app.database import create_tables, seed_demo_data
 from app.routers import disasters, camps, donations, volunteers
 
 
@@ -10,6 +10,7 @@ from app.routers import disasters, camps, donations, volunteers
 async def lifespan(app: FastAPI):
     # Startup
     await create_tables()
+    await seed_demo_data()
     yield
     # Shutdown
     pass
