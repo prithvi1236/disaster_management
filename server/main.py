@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database import create_tables, seed_demo_data
-from app.routers import disasters, camps, donations, volunteers
+from app.routers import disasters, camps, donations, volunteers, coordinators, resource_requests
 
 
 @asynccontextmanager
@@ -37,6 +37,8 @@ app.include_router(disasters.router, prefix="/api", tags=["disasters"])
 app.include_router(camps.router, prefix="/api", tags=["camps"])
 app.include_router(donations.router, prefix="/api", tags=["donations"])
 app.include_router(volunteers.router, prefix="/api", tags=["volunteers"])
+app.include_router(coordinators.router, prefix="/api", tags=["coordinators"])
+app.include_router(resource_requests.router, prefix="/api", tags=["resource-requests"])
 
 
 @app.get("/")

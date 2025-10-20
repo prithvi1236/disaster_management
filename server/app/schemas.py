@@ -8,13 +8,14 @@ from enum import Enum
 class UserRole(str, Enum):
     ADMIN = "admin"
     USER = "user"
+    CAMP_COORDINATOR = "camp_coordinator"
 
 
 class RequestStatus(str, Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    FULFILLED = "fulfilled"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    FULFILLED = "FULFILLED"
 
 
 # User Schemas
@@ -196,6 +197,35 @@ class Volunteer(VolunteerBase):
         from_attributes = True
 
 
+# Camp Coordinator Schemas
+class CampCoordinatorBase(BaseModel):
+    user_id: int
+    camp_id: int
+    responsibilities: Optional[str] = None
+    contact_hours: Optional[str] = None
+    is_active: Optional[bool] = True
+
+
+class CampCoordinatorCreate(CampCoordinatorBase):
+    pass
+
+
+class CampCoordinatorUpdate(BaseModel):
+    responsibilities: Optional[str] = None
+    contact_hours: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class CampCoordinator(CampCoordinatorBase):
+    coordinator_id: int
+    assigned_date: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Resource Request Schemas
 class ResourceRequestBase(BaseModel):
     title: str
@@ -205,7 +235,8 @@ class ResourceRequestBase(BaseModel):
     priority_level: Optional[str] = "Medium"
     disaster_id: Optional[int] = None
     camp_id: Optional[int] = None
-    requested_by: Optional[str] = None
+    requested_by_coordinator_id: Optional[int] = None
+    requested_by_user_id: Optional[int] = None
 
 
 class ResourceRequestCreate(ResourceRequestBase):
@@ -218,14 +249,18 @@ class ResourceRequestUpdate(BaseModel):
     resource_type: Optional[str] = None
     quantity_needed: Optional[str] = None
     priority_level: Optional[str] = None
-    status: Optional[RequestStatus] = None
     disaster_id: Optional[int] = None
     camp_id: Optional[int] = None
-    requested_by: Optional[str] = None
     notes: Optional[str] = None
 
 
-class ResourceRequest(ResourceRequestBase):
+class ResourceRequestStatusUpdate(BaseModel):
+    status: RequestStatus
+    approved_by: Optional[int] = None
+    notes: Optional[str] = None
+
+
+class ResourceRequestResponse(ResourceRequestBase):
     request_id: int
     status: RequestStatus
     approved_by: Optional[int] = None
@@ -295,14 +330,15 @@ class UserLogin(BaseModel):
 class DisasterWithRelations(Disaster):
     camps: List[Camp] = []
     donations: List[Donation] = []
-    resource_requests: List[ResourceRequest] = []
+    resource_requests: List[ResourceRequestResponse] = []
     created_by_user: Optional[User] = None
 
 
 class CampWithRelations(Camp):
     disaster: Optional[Disaster] = None
-    resource_requests: List[ResourceRequest] = []
+    resource_requests: List[ResourceRequestResponse] = []
     volunteer_assignments: List[VolunteerAssignment] = []
+    coordinators: List[CampCoordinator] = []
     created_by_user: Optional[User] = None
 
 
@@ -314,6 +350,7 @@ class UserWithCreations(User):
     created_disasters: List[Disaster] = []
     created_camps: List[Camp] = []
     managed_assignments: List[VolunteerAssignment] = []
+    coordinated_camps: List[CampCoordinator] = []
 
 
 # Statistics Schemas

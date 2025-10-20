@@ -8,7 +8,7 @@ import random
 
 from app.database import SessionLocal
 from app.models import (
-    User, UserRole, Disaster, Camp, Donation, Volunteer, 
+    User, UserRole, Disaster, Camp, CampCoordinator, Donation, Volunteer, 
     ResourceRequest, RequestStatus, VolunteerAssignment
 )
 
@@ -33,7 +33,21 @@ def create_demo_users(db: Session):
             "email": "coordinator@ndrf.gov.in",
             "password_hash": hash_password("coord123"),
             "full_name": "NDRF Coordinator",
-            "role": UserRole.ADMIN
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord1",
+            "email": "coord1@kerala.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Kerala Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord2",
+            "email": "coord2@uttarakhand.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Uttarakhand Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
         },
         {
             "username": "volunteer_user",
@@ -231,6 +245,59 @@ def create_demo_camps(db: Session, disasters, admin_user):
     
     return created_camps
 
+def create_demo_camp_coordinators(db: Session, camps, users):
+    """Create camp coordinator assignments"""
+    # Get coordinator users (skip admin user at index 0)
+    coordinator_users = [user for user in users[1:4] if user.role == UserRole.CAMP_COORDINATOR]
+    
+    coordinators_data = [
+        {
+            "user_id": coordinator_users[0].user_id,
+            "camp_id": camps[0].camp_id,  # Kochi Relief Center
+            "responsibilities": "Overall camp management, resource coordination, volunteer supervision",
+            "contact_hours": "24/7 emergency contact, office hours 9 AM - 6 PM"
+        },
+        {
+            "user_id": coordinator_users[0].user_id,
+            "camp_id": camps[1].camp_id,  # Alappuzha Emergency Camp
+            "responsibilities": "Emergency response coordination, medical team liaison",
+            "contact_hours": "Emergency calls anytime, regular hours 8 AM - 8 PM"
+        },
+        {
+            "user_id": coordinator_users[1].user_id,
+            "camp_id": camps[2].camp_id,  # Chamoli Base Camp
+            "responsibilities": "Mountain rescue coordination, equipment management, safety protocols",
+            "contact_hours": "Daylight hours 6 AM - 6 PM, emergency contact available"
+        },
+        {
+            "user_id": coordinator_users[1].user_id,
+            "camp_id": camps[3].camp_id,  # Joshimath Relief Station
+            "responsibilities": "High altitude medical coordination, supply chain management",
+            "contact_hours": "Regular hours 7 AM - 7 PM"
+        },
+        {
+            "user_id": coordinator_users[2].user_id,
+            "camp_id": camps[4].camp_id,  # Barmer Water Distribution Center
+            "responsibilities": "Water resource management, livestock care coordination",
+            "contact_hours": "Early morning and evening hours, emergency contact"
+        },
+        {
+            "user_id": coordinator_users[0].user_id,
+            "camp_id": camps[7].camp_id,  # Delhi Heat Relief Center
+            "responsibilities": "Heat relief operations, medical emergency coordination",
+            "contact_hours": "Peak heat hours 10 AM - 6 PM, emergency contact"
+        }
+    ]
+    
+    created_coordinators = []
+    for coord_data in coordinators_data:
+        coordinator = CampCoordinator(**coord_data)
+        db.add(coordinator)
+        db.flush()
+        created_coordinators.append(coordinator)
+    
+    return created_coordinators
+
 def create_demo_donations(db: Session, disasters):
     """Create 25-30 sample donations (mix of monetary and supplies)"""
     
@@ -383,7 +450,7 @@ def create_demo_volunteers(db: Session, disasters):
     return created_volunteers
 
 
-def create_demo_resource_requests(db: Session, disasters, camps):
+def create_demo_resource_requests(db: Session, disasters, camps, coordinators):
     """Create sample resource requests"""
     
     resource_requests_data = [
@@ -395,7 +462,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "Critical",
             "disaster_id": disasters[0].disaster_id,
             "camp_id": camps[0].camp_id,
-            "requested_by": "Camp Medical Officer",
+            "requested_by_coordinator_id": coordinators[0].coordinator_id,
             "status": RequestStatus.PENDING
         },
         {
@@ -406,7 +473,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "High",
             "disaster_id": disasters[1].disaster_id,
             "camp_id": camps[2].camp_id,
-            "requested_by": "Camp Coordinator",
+            "requested_by_coordinator_id": coordinators[2].coordinator_id,
             "status": RequestStatus.APPROVED
         },
         {
@@ -417,7 +484,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "High",
             "disaster_id": disasters[2].disaster_id,
             "camp_id": camps[4].camp_id,
-            "requested_by": "Health Officer",
+            "requested_by_coordinator_id": coordinators[4].coordinator_id,
             "status": RequestStatus.FULFILLED
         },
         {
@@ -428,7 +495,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "Medium",
             "disaster_id": disasters[3].disaster_id,
             "camp_id": camps[5].camp_id,
-            "requested_by": "Infrastructure Team",
+            "requested_by_coordinator_id": None,  # Admin request
             "status": RequestStatus.PENDING
         },
         {
@@ -439,8 +506,19 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "High",
             "disaster_id": disasters[4].disaster_id,
             "camp_id": camps[7].camp_id,
-            "requested_by": "Camp Manager",
+            "requested_by_coordinator_id": coordinators[5].coordinator_id,
             "status": RequestStatus.APPROVED
+        },
+        {
+            "title": "Additional Blankets and Warm Clothing",
+            "description": "Winter supplies needed for mountain rescue operations",
+            "resource_type": "Clothing",
+            "quantity_needed": "100 blankets, 50 winter jackets, warm clothing",
+            "priority_level": "High",
+            "disaster_id": disasters[1].disaster_id,
+            "camp_id": camps[3].camp_id,
+            "requested_by_coordinator_id": coordinators[3].coordinator_id,
+            "status": RequestStatus.PENDING
         }
     ]
     
@@ -527,14 +605,17 @@ def seed_database():
         print("🏕️ Creating relief camps...")
         camps = create_demo_camps(db, disasters, admin_user)
         
-        print("💰 Creating donations...")
+        print("�‍💼 Crenating camp coordinators...")
+        coordinators = create_demo_camp_coordinators(db, camps, users)
+        
+        print("� CCreating donations...")
         donations = create_demo_donations(db, disasters)
         
-        print("🙋 Creating volunteers...")
+        print("� Creatinng volunteers...")
         volunteers = create_demo_volunteers(db, disasters)
         
         print("📋 Creating resource requests...")
-        resource_requests = create_demo_resource_requests(db, disasters, camps)
+        resource_requests = create_demo_resource_requests(db, disasters, camps, coordinators)
         
         print("👥 Creating volunteer assignments...")
         volunteer_assignments = create_demo_volunteer_assignments(db, volunteers, camps, disasters, admin_user)
@@ -544,9 +625,10 @@ def seed_database():
         
         print("✅ Database seeding completed successfully!")
         print(f"Created:")
-        print(f"  - {len(users)} users (including admin)")
+        print(f"  - {len(users)} users (including admin and coordinators)")
         print(f"  - {len(disasters)} disasters")
         print(f"  - {len(camps)} relief camps")
+        print(f"  - {len(coordinators)} camp coordinators")
         print(f"  - {len(donations)} donations")
         print(f"  - {len(volunteers)} volunteers")
         print(f"  - {len(resource_requests)} resource requests")
