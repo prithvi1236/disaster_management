@@ -116,6 +116,11 @@
   font-size: 0.9rem;
   margin: -0.25rem 0 0.6rem;
 }
+.success {
+  color: #10b981;
+  font-size: 0.9rem;
+  margin: -0.25rem 0 0.6rem;
+}
 .info {
   color: #aad4ff;
   font-size: 0.92rem;
@@ -147,6 +152,31 @@
   overflow: hidden;
   clip: rect(1px,1px,1px,1px);
   white-space: nowrap;
+}
+
+/* Demo credentials */
+.demo-credentials {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(76, 141, 246, 0.1);
+  border: 1px solid rgba(76, 141, 246, 0.2);
+  border-radius: 8px;
+}
+
+.demo-credentials h4 {
+  margin: 0 0 0.75rem 0;
+  color: #4c8df6;
+  font-size: 0.9rem;
+}
+
+.demo-credentials p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #d1d5db;
+}
+
+.demo-credentials strong {
+  color: #f9fafb;
 }
 
 /* Responsive */

@@ -1,0 +1,199 @@
+.profile-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+  color: #f5f5f5;
+}
+
+.profile-container {
+  background: #1f2937;
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid #374151;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.profile-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #f9fafb;
+  font-size: 2rem;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #fca5a5;
+}
+
+.error button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #4c8df6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.profile-card {
+  background: #111827;
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid #374151;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #374151;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4c8df6, #6ea0ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.profile-info h2 {
+  margin: 0 0 0.5rem 0;
+  color: #f9fafb;
+  font-size: 1.5rem;
+}
+
+.username {
+  color: #9ca3af;
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.role-admin {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.role-user {
+  background: rgba(76, 141, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(76, 141, 246, 0.3);
+}
+
+.profile-details {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #1f2937;
+  border-radius: 8px;
+  border: 1px solid #374151;
+}
+
+.detail-row label {
+  font-weight: 600;
+  color: #9ca3af;
+  min-width: 120px;
+}
+
+.detail-row span {
+  color: #f9fafb;
+  text-align: right;
+}
+
+.role-text {
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.status.active {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.status.inactive {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.profile-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary {
+  background: #374151;
+  color: #f9fafb;
+  border: 1px solid #4b5563;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 0.5rem;
+  }
+  
+  .profile-container {
+    padding: 1.5rem;
+  }
+  
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detail-row span {
+    text-align: left;
+  }
+}

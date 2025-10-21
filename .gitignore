@@ -1,0 +1,59 @@
+# Kiro IDE
+.kiro/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build outputs
+dist/
+build/
+
+# IDE and Editor files - exclude personal settings, include shared configs
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+
+
+
+# Development/testing scripts (temporary files)
+check_database.py
+setup_database.py
+test_statistics.py
+**/README_PERSON*_FEATURES.md
+
+# Root directory test files (use tests/ directory instead)
+/test_*.py
+/test_*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

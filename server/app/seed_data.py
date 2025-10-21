@@ -8,14 +8,13 @@ import random
 
 from app.database import SessionLocal
 from app.models import (
-    User, UserRole, Disaster, Camp, Donation, Volunteer, 
+    User, UserRole, Disaster, Camp, Donation,
     ResourceRequest, RequestStatus, VolunteerAssignment
 )
 
 def hash_password(password: str) -> str:
-    """Simple password hashing for demo purposes"""
-    # For demo purposes, use simple SHA256 hashing
-    # In production, use proper bcrypt
+    """Password hashing compatible with Person 3's auth system"""
+    # Use SHA256 to match auth_utils (for demo purposes)
     return hashlib.sha256(password.encode()).hexdigest()
 
 def create_demo_users(db: Session):
@@ -24,23 +23,23 @@ def create_demo_users(db: Session):
         {
             "username": "admin",
             "email": "admin@disaster.gov.in",
-            "password_hash": hash_password("admin123"),
+            "hashed_password": hash_password("admin123"),
             "full_name": "System Administrator",
             "role": UserRole.ADMIN
         },
         {
             "username": "coordinator1",
             "email": "coordinator@ndrf.gov.in",
-            "password_hash": hash_password("coord123"),
+            "hashed_password": hash_password("coord123"),
             "full_name": "NDRF Coordinator",
             "role": UserRole.ADMIN
         },
         {
             "username": "volunteer_user",
             "email": "volunteer@example.com",
-            "password_hash": hash_password("user123"),
+            "hashed_password": hash_password("user123"),
             "full_name": "Demo Volunteer User",
-            "role": UserRole.USER
+            "role": UserRole.VOLUNTEER_USER
         }
     ]
     

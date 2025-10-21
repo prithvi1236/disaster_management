@@ -1,0 +1,647 @@
+/* Camp Coordinator Styles */
+.coordinator-panel {
+  max-width: 1200px;
+  margin: 1rem auto;
+  padding: 1rem;
+  background: rgba(20, 20, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #f5f6f7;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.coordinator-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(17, 153, 142, 0.15);
+  border: 1px solid rgba(17, 153, 142, 0.3);
+  color: #f5f6f7;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.coordinator-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: #fff;
+}
+
+.coordinator-header p {
+  margin: 0;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.success-message {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.coordinator-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-button {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tab-button.active {
+  border-bottom-color: #11998e;
+  color: #11998e;
+  font-weight: 600;
+  background: rgba(17, 153, 142, 0.1);
+}
+
+.coordinator-content {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Camp Management */
+.camps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.camp-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.camp-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.camp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.camp-header h4 {
+  margin: 0;
+  color: #f9fafb;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge.normal {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.status-badge.high {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.status-badge.full {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.camp-info p {
+  margin: 0.5rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.camp-actions {
+  margin: 1rem 0;
+}
+
+.camp-actions label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.camp-actions input {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f6f7;
+  border-radius: 8px;
+  width: 100px;
+}
+
+.camp-actions input:focus {
+  outline: none;
+  border-color: rgba(17, 153, 142, 0.9);
+  box-shadow: 0 4px 18px rgba(17, 153, 142, 0.12);
+}
+
+.capacity-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.capacity-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+  transition: width 0.3s ease;
+}
+
+/* Resource Request Form */
+.resource-form,
+.assignment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 600px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.resource-form label,
+.assignment-form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  color: #d1d5db;
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+.resource-form input,
+.resource-form select,
+.resource-form textarea,
+.assignment-form input,
+.assignment-form select,
+.assignment-form textarea {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f6f7;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.resource-form input::placeholder,
+.resource-form textarea::placeholder,
+.assignment-form input::placeholder,
+.assignment-form textarea::placeholder {
+  color: rgba(245, 246, 247, 0.52);
+}
+
+.resource-form select,
+.assignment-form select {
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><polygon points="0,0 12,0 6,6" fill="rgba(245,246,247,0.6)"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px 12px;
+  padding-right: 2rem;
+  cursor: pointer;
+  appearance: none;
+}
+
+.resource-form input:focus,
+.resource-form select:focus,
+.resource-form textarea:focus,
+.assignment-form input:focus,
+.assignment-form select:focus,
+.assignment-form textarea:focus {
+  outline: none;
+  border-color: rgba(17, 153, 142, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 18px rgba(17, 153, 142, 0.12);
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: #11998e;
+  color: white;
+  box-shadow: 0 6px 18px rgba(17, 153, 142, 0.12);
+}
+
+.btn-primary:hover {
+  background: #0f8a7f;
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* Volunteer Assignment */
+.volunteers-list {
+  margin-top: 2rem;
+}
+
+.volunteers-list h4 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.volunteers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.volunteer-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.volunteer-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.volunteer-card h5 {
+  margin: 0 0 0.5rem 0;
+  color: #f9fafb;
+}
+
+.volunteer-card p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Resource Request Styles */
+.create-request {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.create-request h4 {
+  margin: 0 0 1rem 0;
+  color: #f9fafb;
+}
+
+.requests-list {
+  margin-top: 2rem;
+}
+
+.requests-list h4 {
+  margin: 0 0 1rem 0;
+  color: #f9fafb;
+}
+
+.requests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.request-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.request-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.request-header h5 {
+  margin: 0;
+  color: #f9fafb;
+  font-size: 1.1rem;
+}
+
+.request-details p {
+  margin: 0.5rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.request-notes {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.request-notes p {
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.approved-quantity {
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+.urgency-low {
+  color: #9ca3af;
+}
+
+.urgency-medium {
+  color: #fbbf24;
+}
+
+.urgency-high {
+  color: #f97316;
+}
+
+.urgency-critical {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.status-badge.pending {
+  background: rgba(156, 163, 175, 0.2);
+  color: #d1d5db;
+  border: 1px solid rgba(156, 163, 175, 0.4);
+}
+
+.status-badge.approved {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.status-badge.rejected {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.no-camp-message {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  color: #fbbf24;
+}
+
+.no-camp-message h4 {
+  margin: 0 0 1rem 0;
+  color: #fbbf24;
+}
+
+.no-camp-message p {
+  margin: 0.5rem 0;
+  color: rgba(251, 191, 36, 0.8);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.empty-state p {
+  margin: 0.5rem 0;
+}
+
+/* Dashboard Overview Styles */
+.coordinator-dashboard h3 {
+  margin: 0 0 1.5rem 0;
+  color: #f9fafb;
+}
+
+.camp-overview {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.camp-overview h4 {
+  margin: 0 0 1rem 0;
+  color: #11998e;
+  font-size: 1.3rem;
+}
+
+.camp-overview p {
+  margin: 0.5rem 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.stat-card {
+  background: rgba(17, 153, 142, 0.1);
+  border: 1px solid rgba(17, 153, 142, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #d1d5db;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #11998e;
+  margin: 0;
+}
+
+/* Volunteer Management Styles */
+.volunteer-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+/* Camp Management Form Styles */
+.camp-management h3 {
+  margin: 0 0 1.5rem 0;
+  color: #f9fafb;
+}
+
+.camp-form {
+  max-width: 600px;
+}
+
+.camp-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Daily Reports Styles */
+.daily-reports h3 {
+  margin: 0 0 1.5rem 0;
+  color: #f9fafb;
+}
+
+.report-form {
+  max-width: 600px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .coordinator-panel {
+    padding: 1rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .coordinator-tabs {
+    flex-direction: column;
+  }
+  
+  .camps-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .volunteers-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .requests-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .camp-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .request-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .volunteer-actions {
+    flex-direction: column;
+  }
+}

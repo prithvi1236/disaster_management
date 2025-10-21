@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app import models, schemas
+from app.auth_utils import get_current_active_user, get_coordinator_or_admin, get_admin_user
 
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["donations"])
 
 
 @router.get("/donations", response_model=List[schemas.Donation])
@@ -12,7 +13,8 @@ async def get_donations(
     skip: int = 0, 
     limit: int = 100, 
     disaster_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
 ):
     """Get all donations, optionally filtered by disaster_id"""
     query = db.query(models.Donation)
@@ -25,7 +27,11 @@ async def get_donations(
 
 
 @router.get("/donations/{donation_id}", response_model=schemas.Donation)
-async def get_donation(donation_id: int, db: Session = Depends(get_db)):
+async def get_donation(
+    donation_id: int, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
     """Get donation by ID"""
     donation = db.query(models.Donation).filter(models.Donation.donation_id == donation_id).first()
     if donation is None:
@@ -36,10 +42,17 @@ async def get_donation(donation_id: int, db: Session = Depends(get_db)):
 @router.post("/donations", response_model=schemas.Donation, status_code=status.HTTP_201_CREATED)
 async def create_donation(donation: schemas.DonationCreate, db: Session = Depends(get_db)):
     """Create a new donation"""
-    # Verify disaster exists
-    disaster = db.query(models.Disaster).filter(models.Disaster.disaster_id == donation.disaster_id).first()
-    if not disaster:
-        raise HTTPException(status_code=404, detail="Disaster not found")
+    # Verify disaster exists if disaster_id is provided
+    if donation.disaster_id:
+        disaster = db.query(models.Disaster).filter(models.Disaster.disaster_id == donation.disaster_id).first()
+        if not disaster:
+            raise HTTPException(status_code=404, detail="Disaster not found")
+    
+    # Verify camp exists if camp_id is provided
+    if donation.camp_id:
+        camp = db.query(models.Camp).filter(models.Camp.camp_id == donation.camp_id).first()
+        if not camp:
+            raise HTTPException(status_code=404, detail="Camp not found")
     
     db_donation = models.Donation(**donation.dict())
     db.add(db_donation)
@@ -52,9 +65,10 @@ async def create_donation(donation: schemas.DonationCreate, db: Session = Depend
 async def update_donation(
     donation_id: int, 
     donation_update: schemas.DonationUpdate, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_coordinator_or_admin)
 ):
-    """Update donation"""
+    """Update donation (camp coordinator or admin)"""
     donation = db.query(models.Donation).filter(models.Donation.donation_id == donation_id).first()
     if donation is None:
         raise HTTPException(status_code=404, detail="Donation not found")
@@ -76,8 +90,12 @@ async def update_donation(
 
 
 @router.delete("/donations/{donation_id}")
-async def delete_donation(donation_id: int, db: Session = Depends(get_db)):
-    """Delete donation"""
+async def delete_donation(
+    donation_id: int, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_admin_user)
+):
+    """Delete donation (admin only)"""
     donation = db.query(models.Donation).filter(models.Donation.donation_id == donation_id).first()
     if donation is None:
         raise HTTPException(status_code=404, detail="Donation not found")

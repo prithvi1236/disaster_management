@@ -2,7 +2,10 @@
 
 body {
   margin: 0;
-  padding: 2rem 1rem;
+  padding-top: 80px; /* Account for fixed header */
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 2rem;
   font-family: 'Space Grotesk', sans-serif;
   background-image: url('/background.jpg');
   background-size: cover;
@@ -10,6 +13,14 @@ body {
   background-attachment: fixed;
   color: #f5f5f5;
   line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-top: 70px; /* Smaller header on mobile */
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }
 
 .container {

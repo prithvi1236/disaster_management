@@ -1,33 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Card from "../components/Card.jsx";
+import { fetchDisasters } from "../services/api.js";
 import "../styles/disasterList.css";
-
-// Mock data for demo purposes
-const mockDisasters = [
-  {
-    disaster_id: 1,
-    name: "Hurricane Maria",
-    type: "Hurricane",
-    location: "Miami-Dade County, Florida",
-    severity_level: "High",
-    status: "Active",
-    start_date: "2024-09-15",
-    description:
-      "Category 4 hurricane causing widespread flooding and power outages across South Florida.",
-  },
-  {
-    disaster_id: 2,
-    name: "Wildfire Emergency",
-    type: "Wildfire",
-    location: "Riverside County, California",
-    severity_level: "Medium",
-    status: "Monitoring",
-    start_date: "2024-09-20",
-    description:
-      "Fast-moving wildfire threatening residential areas and forcing evacuations.",
-  },
-];
 
 export default function DisasterList() {
   const [disasters, setDisasters] = useState([]);
@@ -35,13 +10,18 @@ export default function DisasterList() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Simulate API loading for demo
-    const loadDisasters = () => {
-      setLoading(true);
-      setTimeout(() => {
-        setDisasters(mockDisasters);
+    const loadDisasters = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await fetchDisasters();
+        setDisasters(data);
+      } catch (err) {
+        console.error("Failed to load disasters:", err);
+        setError("Failed to load disasters. Please try again later.");
+      } finally {
         setLoading(false);
-      }, 800);
+      }
     };
 
     loadDisasters();
@@ -50,8 +30,17 @@ export default function DisasterList() {
   if (loading) {
     return (
       <div className="disaster-list container">
-        <h2>Active Disasters</h2>
-        <p className="text-muted">Loading disasters...</p>
+        <div className="list-header">
+          <h2>Active Disasters</h2>
+          <p className="list-subtitle">Loading disasters from database...</p>
+        </div>
+        <div className="loading-grid">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="loading-card">
+              <div className="loading-placeholder"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -69,9 +58,9 @@ export default function DisasterList() {
 
       {disasters.length === 0 && !error && (
         <div className="empty-state">
-          <p className="text-muted">No disasters found.</p>
+          <p className="text-muted">No disasters found in the database.</p>
           <p className="text-muted">
-            Check back later or contact support if this seems incorrect.
+            The system is ready to track disasters when they occur.
           </p>
         </div>
       )}

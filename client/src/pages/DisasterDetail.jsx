@@ -1,159 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { fetchDisaster, fetchCamps, fetchDonations } from '../services/api.js';
 import '../styles/disasterDetail.css';
-
-// Mock data for demo purposes
-const mockData = {
-  disasters: {
-    1: {
-      disaster_id: 1,
-      name: "Hurricane Maria",
-      type: "Hurricane",
-      location: "Miami-Dade County, Florida",
-      severity_level: "High",
-      status: "Active",
-      start_date: "2024-09-15",
-      description: "Category 4 hurricane causing widespread flooding and power outages across South Florida. Emergency services are working around the clock to provide assistance to affected communities."
-    },
-    2: {
-      disaster_id: 2,
-      name: "Wildfire Emergency",
-      type: "Wildfire",
-      location: "Riverside County, California",
-      severity_level: "Medium",
-      status: "Monitoring",
-      start_date: "2024-09-20",
-      description: "Fast-moving wildfire threatening residential areas and forcing evacuations. Firefighters are working to contain the blaze with aerial support."
-    }
-  },
-  camps: {
-    1: [
-      {
-        camp_id: 101,
-        name: "Miami Central Relief Center",
-        location: "Downtown Miami Convention Center",
-        capacity: 500,
-        occupancy: 342,
-        contact_info: "(305) 555-0123",
-        facilities: "Medical care, food service, temporary housing"
-      },
-      {
-        camp_id: 102,
-        name: "Homestead Emergency Shelter",
-        location: "Homestead High School",
-        capacity: 300,
-        occupancy: 187,
-        contact_info: "(305) 555-0124",
-        facilities: "Basic shelter, meals, family services"
-      },
-      {
-        camp_id: 103,
-        name: "Coral Gables Community Center",
-        location: "Coral Gables Recreation Center",
-        capacity: 200,
-        occupancy: 156,
-        contact_info: "(305) 555-0125",
-        facilities: "Pet-friendly shelter, medical station"
-      }
-    ],
-    2: [
-      {
-        camp_id: 201,
-        name: "Riverside Evacuation Center",
-        location: "Riverside Community College",
-        capacity: 400,
-        occupancy: 278,
-        contact_info: "(951) 555-0201",
-        facilities: "Emergency housing, medical care, pet shelter"
-      },
-      {
-        camp_id: 202,
-        name: "Moreno Valley Relief Station",
-        location: "Moreno Valley Civic Center",
-        capacity: 250,
-        occupancy: 134,
-        contact_info: "(951) 555-0202",
-        facilities: "Temporary housing, food distribution"
-      }
-    ]
-  },
-  donations: {
-    1: [
-      {
-        donation_id: 1001,
-        donor_name: "Sarah Johnson",
-        donation_type: "Monetary",
-        amount: "$5,000",
-        donation_date: "2024-09-16"
-      },
-      {
-        donation_id: 1002,
-        donor_name: "Miami Food Bank",
-        donation_type: "Food Supplies",
-        quantity: "2,000 meals",
-        donation_date: "2024-09-16"
-      },
-      {
-        donation_id: 1003,
-        donor_name: "Anonymous",
-        donation_type: "Medical Supplies",
-        quantity: "First aid kits, medications",
-        donation_date: "2024-09-17"
-      },
-      {
-        donation_id: 1004,
-        donor_name: "Local Business Coalition",
-        donation_type: "Monetary",
-        amount: "$15,000",
-        donation_date: "2024-09-17"
-      },
-      {
-        donation_id: 1005,
-        donor_name: "Red Cross Florida",
-        donation_type: "Emergency Supplies",
-        quantity: "Blankets, water, hygiene kits",
-        donation_date: "2024-09-18"
-      },
-      {
-        donation_id: 1006,
-        donor_name: "Maria Rodriguez",
-        donation_type: "Monetary",
-        amount: "$2,500",
-        donation_date: "2024-09-18"
-      }
-    ],
-    2: [
-      {
-        donation_id: 2001,
-        donor_name: "California Fire Foundation",
-        donation_type: "Monetary",
-        amount: "$10,000",
-        donation_date: "2024-09-21"
-      },
-      {
-        donation_id: 2002,
-        donor_name: "Riverside Community",
-        donation_type: "Clothing",
-        quantity: "500 clothing items",
-        donation_date: "2024-09-21"
-      },
-      {
-        donation_id: 2003,
-        donor_name: "Anonymous",
-        donation_type: "Monetary",
-        amount: "$3,000",
-        donation_date: "2024-09-22"
-      },
-      {
-        donation_id: 2004,
-        donor_name: "Local Grocery Stores",
-        donation_type: "Food Supplies",
-        quantity: "1,200 meals",
-        donation_date: "2024-09-22"
-      }
-    ]
-  }
-};
 
 export default function DisasterDetail() {
   const { id } = useParams();
@@ -164,29 +12,35 @@ export default function DisasterDetail() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadDisasterData = () => {
-      setLoading(true);
-      setError('');
-      
-      // Simulate API loading
-      setTimeout(() => {
-        const disasterId = parseInt(id);
-        const disasterData = mockData.disasters[disasterId];
+    const loadDisasterData = async () => {
+      try {
+        setLoading(true);
+        setError('');
         
-        if (!disasterData) {
-          setError('Disaster not found');
-          setLoading(false);
-          return;
-        }
-        
+        // Load disaster details
+        const disasterData = await fetchDisaster(id);
         setDisaster(disasterData);
-        setCamps(mockData.camps[disasterId] || []);
-        setDonations(mockData.donations[disasterId] || []);
+        
+        // Load related camps and donations
+        const [campsData, donationsData] = await Promise.all([
+          fetchCamps(id),
+          fetchDonations(id)
+        ]);
+        
+        setCamps(campsData);
+        setDonations(donationsData);
+        
+      } catch (err) {
+        console.error('Failed to load disaster data:', err);
+        setError('Failed to load disaster details. Please try again later.');
+      } finally {
         setLoading(false);
-      }, 600);
+      }
     };
 
-    loadDisasterData();
+    if (id) {
+      loadDisasterData();
+    }
   }, [id]);
 
   if (loading) {
@@ -229,6 +83,13 @@ export default function DisasterDetail() {
     return 'severity-low';
   };
 
+  const formatAmount = (amount) => {
+    if (typeof amount === 'number') {
+      return `$${amount.toLocaleString()}`;
+    }
+    return amount;
+  };
+
   return (
     <div className="disaster-detail container">
       <div className="breadcrumb">
@@ -250,90 +111,90 @@ export default function DisasterDetail() {
           </div>
           
           <div className="disaster-details">
-            <div className="detail-item">
-              <strong>Location:</strong> {disaster.location}
-            </div>
-            {disaster.start_date && (
+            <div className="detail-grid">
               <div className="detail-item">
-                <strong>Started:</strong> {formatDate(disaster.start_date)}
+                <strong>Location:</strong>
+                <span>{disaster.location}</span>
               </div>
-            )}
-            {disaster.end_date && (
               <div className="detail-item">
-                <strong>Ended:</strong> {formatDate(disaster.end_date)}
-              </div>
-            )}
-            {disaster.status && (
-              <div className="detail-item">
-                <strong>Status:</strong> 
-                <span className={`status status-${disaster.status.toLowerCase()}`}>
+                <strong>Status:</strong>
+                <span className={`status status-${disaster.status?.toLowerCase()}`}>
                   {disaster.status}
                 </span>
               </div>
-            )}
+              {disaster.start_date && (
+                <div className="detail-item">
+                  <strong>Started:</strong>
+                  <span>{formatDate(disaster.start_date)}</span>
+                </div>
+              )}
+              {disaster.end_date && (
+                <div className="detail-item">
+                  <strong>Ended:</strong>
+                  <span>{formatDate(disaster.end_date)}</span>
+                </div>
+              )}
+            </div>
+            
             {disaster.description && (
-              <div className="detail-item description">
-                <strong>Description:</strong>
+              <div className="disaster-description">
+                <h3>Description</h3>
                 <p>{disaster.description}</p>
               </div>
             )}
-          </div>
-
-          <div className="action-buttons">
-            <Link to={`/donate?disaster_id=${id}`} className="btn btn-primary">
-              Make Donation
-            </Link>
-            <Link to={`/volunteer?disaster_id=${id}`} className="btn btn-secondary">
-              Volunteer
-            </Link>
           </div>
         </div>
       </div>
 
       <div className="detail-sections">
-        <section className="section camps">
+        {/* Relief Camps Section */}
+        <section className="detail-section">
           <div className="section-header">
-            <h3 className="section-title">Relief Camps ({camps.length})</h3>
+            <h2>Relief Camps</h2>
+            <span className="section-count">{camps.length} camps</span>
           </div>
+          
           {camps.length === 0 ? (
-            <div className="empty-section">
-              <p className="text-muted">No relief camps have been established for this disaster yet.</p>
+            <div className="empty-state">
+              <p>No relief camps have been set up for this disaster yet.</p>
             </div>
           ) : (
-            <div className="detail-list">
-              {camps.map(camp => (
+            <div className="camps-grid">
+              {camps.map((camp) => (
                 <div key={camp.camp_id} className="detail-card camp-card">
-                  <div className="card-header">
-                    <h4 className="camp-name">{camp.name}</h4>
-                    <div className="occupancy-indicator">
-                      <span className="occupancy-text">
-                        {camp.occupancy || 0} / {camp.capacity || 'N/A'}
-                      </span>
-                      {camp.capacity && (
-                        <div className="occupancy-bar">
-                          <div 
-                            className="occupancy-fill"
-                            style={{ 
-                              width: `${Math.min((camp.occupancy || 0) / camp.capacity * 100, 100)}%` 
-                            }}
-                          />
-                        </div>
-                      )}
+                  <div className="camp-header">
+                    <h3 className="camp-name">
+                      <Link to={`/camps/${camp.camp_id}`} className="camp-link">
+                        {camp.name}
+                      </Link>
+                    </h3>
+                    <div className="occupancy-badge">
+                      {camp.occupancy || 0}/{camp.capacity || 0}
                     </div>
                   </div>
+                  
                   <div className="camp-details">
-                    <p className="camp-location">📍 {camp.location}</p>
+                    <p><strong>Location:</strong> {camp.location}</p>
                     {camp.contact_info && (
-                      <p className="camp-contact">📞 {camp.contact_info}</p>
+                      <p><strong>Contact:</strong> {camp.contact_info}</p>
                     )}
                     {camp.facilities && (
-                      <p className="camp-facilities">🏥 {camp.facilities}</p>
+                      <p><strong>Facilities:</strong> {camp.facilities}</p>
                     )}
-                  </div>
-                  <div className="card-actions">
-                    <Link to={`/camps/${camp.camp_id}`} className="btn btn-secondary">
-                      View Details
-                    </Link>
+                    
+                    {camp.capacity && (
+                      <div className="occupancy-bar">
+                        <div className="occupancy-label">
+                          Occupancy: {Math.round(((camp.occupancy || 0) / camp.capacity) * 100)}%
+                        </div>
+                        <div className="occupancy-progress">
+                          <div 
+                            className="occupancy-fill"
+                            style={{ width: `${Math.min(((camp.occupancy || 0) / camp.capacity) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -341,46 +202,62 @@ export default function DisasterDetail() {
           )}
         </section>
 
-        <section className="section donations">
+        {/* Donations Section */}
+        <section className="detail-section">
           <div className="section-header">
-            <h3 className="section-title">Recent Donations ({donations.length})</h3>
-            <Link to={`/donate?disaster_id=${id}`} className="btn btn-primary btn-small">
-              Donate Now
-            </Link>
+            <h2>Recent Donations</h2>
+            <span className="section-count">{donations.length} donations</span>
           </div>
+          
           {donations.length === 0 ? (
-            <div className="empty-section">
-              <p className="text-muted">No donations have been recorded for this disaster yet.</p>
-              <p className="text-muted">Be the first to help by making a donation.</p>
+            <div className="empty-state">
+              <p>No donations have been recorded for this disaster yet.</p>
+              <Link to="/donate" className="btn btn-primary">
+                Make a Donation
+              </Link>
             </div>
           ) : (
-            <div className="detail-list">
-              {donations.slice(0, 12).map(donation => (
+            <div className="donations-list">
+              {donations.slice(0, 10).map((donation) => (
                 <div key={donation.donation_id} className="detail-card donation-card">
                   <div className="donation-header">
-                    <strong className="donor-name">
-                      {donation.donor_name || 'Anonymous Donor'}
-                    </strong>
-                    <span className="donation-date">
+                    <div className="donor-info">
+                      <h4 className="donor-name">{donation.donor_name || 'Anonymous'}</h4>
+                      <span className="donation-type">{donation.donation_type}</span>
+                    </div>
+                    <div className="donation-amount">
+                      {donation.amount ? formatAmount(donation.amount) : donation.quantity}
+                    </div>
+                  </div>
+                  
+                  {donation.donation_date && (
+                    <div className="donation-date">
                       {formatDate(donation.donation_date)}
-                    </span>
-                  </div>
-                  <div className="donation-details">
-                    <p className="donation-type">{donation.donation_type}</p>
-                    <p className="donation-amount">
-                      {donation.amount ? `$${donation.amount}` : donation.quantity}
-                    </p>
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
-              {donations.length > 12 && (
+              
+              {donations.length > 10 && (
                 <div className="show-more">
-                  <p className="text-muted">And {donations.length - 12} more donations...</p>
+                  <p>Showing 10 of {donations.length} donations</p>
                 </div>
               )}
             </div>
           )}
         </section>
+      </div>
+
+      <div className="detail-actions">
+        <Link to="/volunteer-signup" className="btn btn-primary">
+          Volunteer for This Disaster
+        </Link>
+        <Link to="/donate" className="btn btn-secondary">
+          Make a Donation
+        </Link>
+        <Link to="/disasters" className="btn btn-outline">
+          ← Back to All Disasters
+        </Link>
       </div>
     </div>
   );

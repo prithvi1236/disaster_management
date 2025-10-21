@@ -25,8 +25,8 @@ async def create_tables():
 async def seed_demo_data():
     """Seed database with demo data"""
     try:
-        from app.seed_data import seed_database
-        seed_database()
+        from app.seed_data_simple import create_simple_demo_data
+        create_simple_demo_data()
     except Exception as e:
         print(f"Warning: Could not seed demo data: {e}")
 
