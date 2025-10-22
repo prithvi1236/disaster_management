@@ -50,10 +50,45 @@ def create_demo_users(db: Session):
             "role": UserRole.CAMP_COORDINATOR
         },
         {
+            "username": "camp_coord3",
+            "email": "coord3@gujarat.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Gujarat Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord4",
+            "email": "coord4@delhi.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Delhi Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord5",
+            "email": "coord5@kerala.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Kerala Camp Coordinator 2",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
             "username": "volunteer_user",
             "email": "volunteer@example.com",
             "password_hash": hash_password("user123"),
             "full_name": "Demo Volunteer User",
+            "role": UserRole.USER
+        },
+        {
+            "username": "dr_arjun",
+            "email": "arjun.mehta@gmail.com",
+            "password_hash": hash_password("volunteer123"),
+            "full_name": "Dr. Arjun Mehta",
+            "role": UserRole.USER
+        },
+        {
+            "username": "nurse_rekha",
+            "email": "rekha.sharma@yahoo.com",
+            "password_hash": hash_password("volunteer123"),
+            "full_name": "Nurse Rekha Sharma",
             "role": UserRole.USER
         }
     ]
@@ -246,10 +281,11 @@ def create_demo_camps(db: Session, disasters, admin_user):
     return created_camps
 
 def create_demo_camp_coordinators(db: Session, camps, users):
-    """Create camp coordinator assignments"""
+    """Create camp coordinator assignments - one coordinator per camp"""
     # Get coordinator users (skip admin user at index 0)
-    coordinator_users = [user for user in users[1:4] if user.role == UserRole.CAMP_COORDINATOR]
+    coordinator_users = [user for user in users[1:] if user.role == UserRole.CAMP_COORDINATOR]
     
+    # Each coordinator gets exactly one camp - one-to-one mapping
     coordinators_data = [
         {
             "user_id": coordinator_users[0].user_id,
@@ -258,36 +294,63 @@ def create_demo_camp_coordinators(db: Session, camps, users):
             "contact_hours": "24/7 emergency contact, office hours 9 AM - 6 PM"
         },
         {
-            "user_id": coordinator_users[0].user_id,
+            "user_id": coordinator_users[1].user_id,
             "camp_id": camps[1].camp_id,  # Alappuzha Emergency Camp
             "responsibilities": "Emergency response coordination, medical team liaison",
             "contact_hours": "Emergency calls anytime, regular hours 8 AM - 8 PM"
         },
         {
-            "user_id": coordinator_users[1].user_id,
+            "user_id": coordinator_users[2].user_id,
             "camp_id": camps[2].camp_id,  # Chamoli Base Camp
             "responsibilities": "Mountain rescue coordination, equipment management, safety protocols",
             "contact_hours": "Daylight hours 6 AM - 6 PM, emergency contact available"
         },
         {
-            "user_id": coordinator_users[1].user_id,
+            "user_id": coordinator_users[3].user_id,
             "camp_id": camps[3].camp_id,  # Joshimath Relief Station
             "responsibilities": "High altitude medical coordination, supply chain management",
             "contact_hours": "Regular hours 7 AM - 7 PM"
         },
         {
-            "user_id": coordinator_users[2].user_id,
+            "user_id": coordinator_users[4].user_id,
             "camp_id": camps[4].camp_id,  # Barmer Water Distribution Center
             "responsibilities": "Water resource management, livestock care coordination",
             "contact_hours": "Early morning and evening hours, emergency contact"
         },
-        {
-            "user_id": coordinator_users[0].user_id,
-            "camp_id": camps[7].camp_id,  # Delhi Heat Relief Center
-            "responsibilities": "Heat relief operations, medical emergency coordination",
-            "contact_hours": "Peak heat hours 10 AM - 6 PM, emergency contact"
-        }
+        # Only assign remaining camps if we have enough coordinators
+        # Otherwise leave some camps without coordinators for now
     ]
+    
+    # Add remaining camps only if we have enough coordinators
+    if len(coordinator_users) > 5:
+        coordinators_data.extend([
+            {
+                "user_id": coordinator_users[5].user_id,
+                "camp_id": camps[5].camp_id,  # Kutch Rehabilitation Center
+                "responsibilities": "Post-cyclone rehabilitation, infrastructure repair coordination",
+                "contact_hours": "Regular hours 8 AM - 6 PM"
+            }
+        ])
+    
+    if len(coordinator_users) > 6:
+        coordinators_data.extend([
+            {
+                "user_id": coordinator_users[6].user_id,
+                "camp_id": camps[6].camp_id,  # Mandvi Coastal Relief Camp
+                "responsibilities": "Coastal community support, fishing boat repairs",
+                "contact_hours": "Morning and evening hours, emergency contact"
+            }
+        ])
+    
+    if len(coordinator_users) > 7:
+        coordinators_data.extend([
+            {
+                "user_id": coordinator_users[7].user_id,
+                "camp_id": camps[7].camp_id,  # Delhi Heat Relief Center
+                "responsibilities": "Heat relief operations, medical emergency coordination",
+                "contact_hours": "Peak heat hours 10 AM - 6 PM, emergency contact"
+            }
+        ])
     
     created_coordinators = []
     for coord_data in coordinators_data:

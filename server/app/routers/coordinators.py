@@ -48,19 +48,34 @@ def create_camp_coordinator(
             detail="Camp not found"
         )
     
-    # Check if user is already assigned to this camp
-    existing = db.query(CampCoordinator).filter(
+    # Check if user already has an active coordinator assignment (one coordinator per user)
+    existing_coordinator = db.query(CampCoordinator).filter(
         and_(
             CampCoordinator.user_id == coordinator_data.user_id,
+            CampCoordinator.is_active == True
+        )
+    ).first()
+    
+    if existing_coordinator:
+        existing_camp = db.query(Camp).filter(Camp.camp_id == existing_coordinator.camp_id).first()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User is already assigned as coordinator for camp '{existing_camp.name}'. Each coordinator can only manage one camp."
+        )
+    
+    # Check if camp already has a coordinator
+    existing_camp_coordinator = db.query(CampCoordinator).filter(
+        and_(
             CampCoordinator.camp_id == coordinator_data.camp_id,
             CampCoordinator.is_active == True
         )
     ).first()
     
-    if existing:
+    if existing_camp_coordinator:
+        existing_user = db.query(User).filter(User.user_id == existing_camp_coordinator.user_id).first()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is already assigned as coordinator for this camp"
+            detail=f"Camp already has a coordinator assigned: {existing_user.full_name}"
         )
     
     # Create coordinator assignment
@@ -251,3 +266,92 @@ def get_camp_coordinators(
     
     coordinators = query.all()
     return coordinators
+
+@router.get("/users/available")
+def get_available_coordinator_users(db: Session = Depends(get_db)):
+    """Get users with coordinator role who are not currently assigned to a camp"""
+    
+    # Get all users with coordinator role
+    coordinator_users = db.query(User).filter(
+        User.role == UserRole.CAMP_COORDINATOR,
+        User.is_active == True
+    ).all()
+    
+    # Get currently assigned coordinator user IDs
+    assigned_user_ids = db.query(CampCoordinator.user_id).filter(
+        CampCoordinator.is_active == True
+    ).all()
+    assigned_user_ids = [uid[0] for uid in assigned_user_ids]
+    
+    # Filter out assigned coordinators
+    available_coordinators = [
+        {
+            "user_id": user.user_id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email
+        }
+        for user in coordinator_users 
+        if user.user_id not in assigned_user_ids
+    ]
+    
+    return available_coordinators
+
+@router.get("/users/all")
+def get_all_coordinator_users(db: Session = Depends(get_db)):
+    """Get all users with coordinator role"""
+    
+    coordinator_users = db.query(User).filter(
+        User.role == UserRole.CAMP_COORDINATOR,
+        User.is_active == True
+    ).all()
+    
+    return [
+        {
+            "user_id": user.user_id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email
+        }
+        for user in coordinator_users
+    ]
+
+@router.get("/user/{user_id}/requests", response_model=List[ResourceRequestResponse])
+def get_coordinator_user_requests(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get all resource requests made by a coordinator user"""
+    
+    # Verify user exists and is a coordinator
+    user = db.query(User).filter(
+        User.user_id == user_id,
+        User.role == UserRole.CAMP_COORDINATOR,
+        User.is_active == True
+    ).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found or not a coordinator"
+        )
+    
+    # Get all coordinator assignments for this user
+    coordinators = db.query(CampCoordinator).filter(
+        and_(
+            CampCoordinator.user_id == user_id,
+            CampCoordinator.is_active == True
+        )
+    ).all()
+    
+    # Get all requests made by any of these coordinator assignments
+    coordinator_ids = [c.coordinator_id for c in coordinators]
+    
+    if not coordinator_ids:
+        return []
+    
+    requests = db.query(ResourceRequest).filter(
+        ResourceRequest.requested_by_coordinator_id.in_(coordinator_ids)
+    ).order_by(ResourceRequest.request_date.desc()).all()
+    
+    return requests

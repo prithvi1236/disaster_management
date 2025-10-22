@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '../services/auth.js';
-import { fetchVolunteers, fetchVolunteerAssignments } from '../services/api.js';
-import '../styles/volunteerPortal.css';
+import { Link } from 'react-router-dom';
+import { getCurrentUser, logout } from '../services/auth.js';
+import { fetchVolunteers, fetchVolunteerAssignments, fetchDisasters } from '../services/api.js';
+import '../styles/globals.css';
 
 export default function VolunteerPortal() {
   const [user, setUser] = useState(null);
   const [volunteerProfile, setVolunteerProfile] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [disasters, setDisasters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,8 +22,15 @@ export default function VolunteerPortal() {
       setUser(currentUser);
 
       if (currentUser) {
+        // Load disasters and volunteer data in parallel
+        const [disastersData, volunteers] = await Promise.all([
+          fetchDisasters(),
+          fetchVolunteers()
+        ]);
+        
+        setDisasters(disastersData);
+        
         // Find volunteer profile by email
-        const volunteers = await fetchVolunteers();
         const profile = volunteers.find(v => v.email === currentUser.email);
         setVolunteerProfile(profile);
         
@@ -43,10 +52,14 @@ export default function VolunteerPortal() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
   if (loading) {
     return (
-      <div className="volunteer-portal container">
-        <h2>Volunteer Portal</h2>
+      <div className="container">
+        <h2>Volunteer Dashboard</h2>
         <p>Loading your volunteer information...</p>
       </div>
     );
@@ -54,177 +67,219 @@ export default function VolunteerPortal() {
 
   if (!user) {
     return (
-      <div className="volunteer-portal container">
-        <h2>Volunteer Portal</h2>
-        <p>Please <a href="/login">login</a> to access your volunteer portal.</p>
+      <div className="container">
+        <h2>Volunteer Dashboard</h2>
+        <p>Please <Link to="/login">login</Link> to access your volunteer dashboard.</p>
       </div>
     );
   }
 
+  const activeAssignments = assignments.filter(a => a.status === 'Active');
+  const completedAssignments = assignments.filter(a => a.status === 'Completed');
+  const activeDisasters = disasters.filter(d => d.status === 'Active');
+
   return (
-    <div className="volunteer-portal container">
-      <div className="portal-header">
-        <h2>Volunteer Portal</h2>
-        <p>Welcome back, {user.full_name}!</p>
+    <div className="container">
+      <div className="flex justify-between items-center" style={{ margin: 'var(--spacing-4xl) 0 var(--spacing-2xl) 0' }}>
+        <div>
+          <h1 className="mb-sm">Volunteer Dashboard</h1>
+          <p className="text-muted mb-0">Welcome back, {user.full_name}!</p>
+        </div>
+        <button className="btn btn-secondary" onClick={handleLogout}>
+          Logout
+        </button>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <div className="alert alert-danger">
+          {error}
+        </div>
+      )}
 
-      <div className="portal-sections">
-        <section className="profile-section">
-          <h3>Your Profile</h3>
-          {volunteerProfile ? (
-            <div className="profile-card">
-              <div className="profile-info">
-                <p><strong>Name:</strong> {volunteerProfile.name}</p>
-                <p><strong>Email:</strong> {volunteerProfile.email}</p>
-                <p><strong>Phone:</strong> {volunteerProfile.phone}</p>
-                <p><strong>Skills:</strong> {volunteerProfile.skills || 'Not specified'}</p>
-                <p><strong>Availability:</strong> {volunteerProfile.availability || 'Not specified'}</p>
-                <p><strong>Status:</strong> 
-                  <span className={`status ${volunteerProfile.status?.toLowerCase()}`}>
-                    {volunteerProfile.status}
-                  </span>
-                  {volunteerProfile.status === 'PENDING' && (
-                    <span className="status-note"> - Awaiting admin approval</span>
-                  )}
-                  {volunteerProfile.status === 'REJECTED' && volunteerProfile.rejection_reason && (
-                    <span className="status-note"> - {volunteerProfile.rejection_reason}</span>
-                  )}
-                </p>
-              </div>
-              <div className="profile-actions">
-                <a href="/volunteer-signup" className="btn btn-secondary">
-                  Update Profile
-                </a>
-              </div>
+      {/* Volunteer Status Overview */}
+      <div className="mb-2xl">
+        <h3 className="mb-lg">Your Status</h3>
+        <div className="grid grid-cols-4 gap-lg">
+          <div className="card text-center">
+            <h4 className="text-3xl font-bold text-primary mb-sm">{assignments.length}</h4>
+            <p className="text-muted mb-0">Total Assignments</p>
+          </div>
+          <div className="card text-center">
+            <h4 className="text-3xl font-bold text-success mb-sm">{activeAssignments.length}</h4>
+            <p className="text-muted mb-0">Active Assignments</p>
+          </div>
+          <div className="card text-center">
+            <h4 className="text-3xl font-bold text-warning mb-sm">{completedAssignments.length}</h4>
+            <p className="text-muted mb-0">Completed</p>
+          </div>
+          <div className="card text-center">
+            <div className={`badge badge-${volunteerProfile?.status === 'APPROVED' ? 'success' : volunteerProfile?.status === 'PENDING' ? 'warning' : 'danger'} mb-sm`}>
+              {volunteerProfile?.status || 'Not Registered'}
             </div>
-          ) : (
-            <div className="no-profile">
-              <p>You haven't registered as a volunteer yet.</p>
-              <a href="/volunteer-signup" className="btn btn-primary">
-                Register as Volunteer
-              </a>
-            </div>
-          )}
-        </section>
+            <p className="text-muted mb-0">Volunteer Status</p>
+          </div>
+        </div>
+      </div>
 
-        <section className="assignments-section">
-          <h3>Your Volunteer History</h3>
-          {assignments.length === 0 ? (
-            <div className="no-assignments">
-              <p>You don't have any assignments yet.</p>
-              {volunteerProfile?.status === 'PENDING' && (
-                <p>Once your volunteer application is approved, you'll be able to receive assignments.</p>
-              )}
-              {volunteerProfile?.status === 'APPROVED' && (
-                <p>You're approved! Check back later or contact coordinators for assignment opportunities.</p>
-              )}
-            </div>
-          ) : (
-            <div className="assignments-container">
-              {/* Current/Active Assignments */}
-              {assignments.filter(a => a.status === 'Active').length > 0 && (
-                <div className="assignments-group">
-                  <h4>Current Assignments</h4>
-                  <div className="assignments-list">
-                    {assignments.filter(a => a.status === 'Active').map((assignment) => (
-                      <div key={assignment.assignment_id} className="assignment-card current">
-                        <div className="assignment-header">
-                          <h5>{assignment.role || 'Volunteer Role'}</h5>
-                          <span className="status active">Active</span>
-                        </div>
-                        <div className="assignment-details">
-                          <p><strong>Assignment ID:</strong> #{assignment.assignment_id}</p>
-                          <p><strong>Camp ID:</strong> {assignment.camp_id}</p>
-                          <p><strong>Started:</strong> {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Not specified'}</p>
-                          <p><strong>Assigned:</strong> {new Date(assignment.assignment_date).toLocaleDateString()}</p>
-                          {assignment.notes && (
-                            <p><strong>Notes:</strong> {assignment.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+      {/* Profile Section */}
+      <div className="mb-2xl">
+        <h3 className="mb-lg">Your Profile</h3>
+        {volunteerProfile ? (
+          <div className="card">
+            <div className="grid grid-cols-2 gap-lg">
+              <div>
+                <h4 className="mb-lg">Personal Information</h4>
+                <div className="mb-lg">
+                  <p className="text-sm font-medium text-muted">Name</p>
+                  <p className="text-secondary">{volunteerProfile.name}</p>
                 </div>
-              )}
-
-              {/* Past Assignments */}
-              {assignments.filter(a => a.status !== 'Active').length > 0 && (
-                <div className="assignments-group">
-                  <h4>Past Assignments</h4>
-                  <div className="assignments-list">
-                    {assignments.filter(a => a.status !== 'Active').map((assignment) => (
-                      <div key={assignment.assignment_id} className="assignment-card past">
-                        <div className="assignment-header">
-                          <h5>{assignment.role || 'Volunteer Role'}</h5>
-                          <span className={`status ${assignment.status?.toLowerCase()}`}>
-                            {assignment.status}
-                          </span>
-                        </div>
-                        <div className="assignment-details">
-                          <p><strong>Assignment ID:</strong> #{assignment.assignment_id}</p>
-                          <p><strong>Camp ID:</strong> {assignment.camp_id}</p>
-                          <p><strong>Duration:</strong> 
-                            {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Not specified'}
-                            {assignment.end_date && ` - ${new Date(assignment.end_date).toLocaleDateString()}`}
-                          </p>
-                          <p><strong>Assigned:</strong> {new Date(assignment.assignment_date).toLocaleDateString()}</p>
-                          {assignment.notes && (
-                            <p><strong>Notes:</strong> {assignment.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="mb-lg">
+                  <p className="text-sm font-medium text-muted">Email</p>
+                  <p className="text-secondary">{volunteerProfile.email}</p>
                 </div>
-              )}
-
-              {/* Summary Stats */}
-              <div className="volunteer-stats">
-                <h4>Your Impact</h4>
-                <div className="stats-grid">
-                  <div className="stat-item">
-                    <span className="stat-number">{assignments.length}</span>
-                    <span className="stat-label">Total Assignments</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{assignments.filter(a => a.status === 'Active').length}</span>
-                    <span className="stat-label">Currently Active</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{assignments.filter(a => a.status === 'Completed').length}</span>
-                    <span className="stat-label">Completed</span>
+                <div className="mb-lg">
+                  <p className="text-sm font-medium text-muted">Phone</p>
+                  <p className="text-secondary">{volunteerProfile.phone}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-lg">Volunteer Details</h4>
+                <div className="mb-lg">
+                  <p className="text-sm font-medium text-muted">Skills</p>
+                  <p className="text-secondary">{volunteerProfile.skills || 'Not specified'}</p>
+                </div>
+                <div className="mb-lg">
+                  <p className="text-sm font-medium text-muted">Availability</p>
+                  <p className="text-secondary">{volunteerProfile.availability || 'Not specified'}</p>
+                </div>
+                <div className="mb-lg">
+                  <p className="text-sm font-medium text-muted">Status</p>
+                  <div className="flex items-center gap-sm">
+                    <div className={`badge badge-${volunteerProfile.status === 'APPROVED' ? 'success' : volunteerProfile.status === 'PENDING' ? 'warning' : 'danger'}`}>
+                      {volunteerProfile.status}
+                    </div>
+                    {volunteerProfile.status === 'PENDING' && (
+                      <span className="text-muted text-sm">Awaiting admin approval</span>
+                    )}
+                    {volunteerProfile.status === 'REJECTED' && volunteerProfile.rejection_reason && (
+                      <span className="text-danger text-sm">{volunteerProfile.rejection_reason}</span>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          )}
-        </section>
-
-        <section className="opportunities-section">
-          <h3>Available Opportunities</h3>
-          <div className="opportunities-list">
-            <div className="opportunity-card">
-              <h4>Medical Support Volunteer</h4>
-              <p>Help provide basic medical care at relief camps</p>
-              <p><strong>Skills needed:</strong> Medical training, First Aid</p>
-              <a href="/volunteer-signup" className="btn btn-primary">Apply</a>
-            </div>
-            <div className="opportunity-card">
-              <h4>Food Distribution Volunteer</h4>
-              <p>Assist with meal preparation and distribution</p>
-              <p><strong>Skills needed:</strong> Food handling, Organization</p>
-              <a href="/volunteer-signup" className="btn btn-primary">Apply</a>
-            </div>
-            <div className="opportunity-card">
-              <h4>Logistics Coordinator</h4>
-              <p>Help coordinate supplies and transportation</p>
-              <p><strong>Skills needed:</strong> Organization, Communication</p>
-              <a href="/volunteer-signup" className="btn btn-primary">Apply</a>
+            <div className="flex gap-lg">
+              <Link to="/volunteer-signup" className="btn btn-secondary">
+                Update Profile
+              </Link>
             </div>
           </div>
-        </section>
+        ) : (
+          <div className="card text-center" style={{ padding: 'var(--spacing-4xl)' }}>
+            <h4 className="mb-lg">Complete Your Volunteer Registration</h4>
+            <p className="text-muted mb-lg">You haven't registered as a volunteer yet. Complete your registration to start helping with disaster relief efforts.</p>
+            <Link to="/volunteer-signup" className="btn btn-primary">
+              Register as Volunteer
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Current Assignments */}
+      {activeAssignments.length > 0 && (
+        <div className="mb-2xl">
+          <h3 className="mb-lg">Current Assignments</h3>
+          <div className="grid gap-xl">
+            {activeAssignments.map((assignment) => (
+              <div key={assignment.assignment_id} className="card">
+                <div className="flex justify-between items-start mb-lg">
+                  <div>
+                    <h4 className="mb-sm">{assignment.role || 'Volunteer Assignment'}</h4>
+                    <p className="text-muted mb-sm">Assignment #{assignment.assignment_id}</p>
+                    <p className="text-secondary mb-0">Camp ID: {assignment.camp_id}</p>
+                  </div>
+                  <div className="badge badge-success">Active</div>
+                </div>
+                <div className="grid grid-cols-2 gap-lg mb-lg">
+                  <div>
+                    <p className="text-sm font-medium text-muted">Start Date</p>
+                    <p className="text-secondary">{assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Assigned Date</p>
+                    <p className="text-secondary">{new Date(assignment.assignment_date).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                {assignment.notes && (
+                  <div className="mb-lg">
+                    <p className="text-sm font-medium text-muted">Notes</p>
+                    <p className="text-secondary">{assignment.notes}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Active Disasters */}
+      <div className="mb-2xl">
+        <h3 className="mb-lg">Active Disasters</h3>
+        {activeDisasters.length === 0 ? (
+          <div className="card text-center" style={{ padding: 'var(--spacing-4xl)' }}>
+            <p className="text-muted">No active disasters at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid gap-xl">
+            {activeDisasters.slice(0, 3).map(disaster => (
+              <div key={disaster.disaster_id} className="card">
+                <div className="flex justify-between items-start mb-lg">
+                  <div>
+                    <h4 className="mb-sm">{disaster.name}</h4>
+                    <p className="text-muted mb-sm">📍 {disaster.location}</p>
+                    <p className="text-secondary mb-0">{disaster.type} - {disaster.severity_level} Severity</p>
+                  </div>
+                  <div className="badge badge-danger">{disaster.status}</div>
+                </div>
+                <p className="text-secondary mb-lg">{disaster.description}</p>
+                <div className="flex gap-lg">
+                  <Link to={`/disasters/${disaster.disaster_id}`} className="btn btn-primary">
+                    View Details
+                  </Link>
+                  <Link to="/volunteer-signup" className="btn btn-secondary">
+                    Volunteer for This Disaster
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div>
+        <h3 className="mb-lg">Quick Actions</h3>
+        <div className="grid grid-cols-2 gap-lg">
+          <Link to="/disasters" className="btn btn-primary">
+            View All Disasters
+          </Link>
+          <Link to="/volunteer-signup" className="btn btn-success">
+            Update Volunteer Profile
+          </Link>
+          <Link to="/donate" className="btn btn-warning">
+            Make a Donation
+          </Link>
+          {volunteerProfile?.status === 'PENDING' && (
+            <div className="btn btn-secondary" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+              Awaiting Approval
+            </div>
+          )}
+          {volunteerProfile?.status === 'APPROVED' && (
+            <div className="btn btn-success" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+              Available for Assignment
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

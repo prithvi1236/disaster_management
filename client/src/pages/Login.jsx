@@ -18,7 +18,12 @@ export default function Login() {
     try {
       const result = await login({ username, password });
       if (result.success) {
-        navigate('/dashboard');
+        // Redirect based on user role
+        if (result.user.role === 'user') {
+          navigate('/volunteer-portal');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(result.error);
       }
@@ -85,7 +90,8 @@ export default function Login() {
           <div className="text-sm">
             <p className="mb-sm"><strong>Admin:</strong> username: admin, password: admin123</p>
             <p className="mb-sm"><strong>Coordinator:</strong> username: coordinator1, password: coord123</p>
-            <p className="mb-0"><strong>Volunteer:</strong> username: volunteer_user, password: user123</p>
+            <p className="mb-sm"><strong>Volunteer:</strong> username: dr_arjun, password: volunteer123</p>
+            <p className="mb-0"><strong>Volunteer:</strong> username: nurse_rekha, password: volunteer123</p>
           </div>
         </div>
 

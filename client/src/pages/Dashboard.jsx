@@ -134,17 +134,18 @@ export default function Dashboard() {
 
       <div>
         <h3 className="mb-lg">Quick Actions</h3>
-        <div className="grid grid-cols-2 gap-lg">
+        <div className="grid grid-cols-3 gap-lg">
           {user.role === 'admin' ? (
             <>
               <a href="/admin/volunteers" className="btn btn-primary">Approve Volunteers</a>
+              <a href="/admin/coordinators" className="btn btn-primary">Manage Coordinators</a>
               <a href="/admin/disasters" className="btn btn-primary">Manage Disasters</a>
               <a href="/admin/requests" className="btn btn-warning">Approve Requests</a>
               <a href="/disasters" className="btn btn-secondary">View Disasters</a>
             </>
           ) : user.role === 'camp_coordinator' ? (
             <>
-              <a href="/coordinator/camps" className="btn btn-primary">Manage My Camps</a>
+              <a href="/coordinator/camps" className="btn btn-primary">Manage My Camp</a>
               <a href="/coordinator/requests" className="btn btn-warning">My Requests</a>
               <a href="/coordinator/volunteers" className="btn btn-secondary">View Volunteers</a>
               <a href="/disasters" className="btn btn-secondary">View Disasters</a>

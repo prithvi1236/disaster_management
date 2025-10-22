@@ -83,12 +83,6 @@
   color: var(--color-text-muted);
 }
 
-.camp-actions {
-  display: flex;
-  gap: var(--spacing-lg);
-  justify-content: center;
-}
-
 @media (max-width: 780px) {
   .camp-header {
     flex-direction: column;

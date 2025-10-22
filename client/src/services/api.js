@@ -156,3 +156,43 @@ export async function updateDisaster(disasterId, disaster) {
     body: JSON.stringify(disaster)
   });
 }
+
+// Coordinator-specific APIs
+export async function getCoordinatorCamps(userId) {
+  return request(`/coordinators/user/${userId}/camps`, { method: 'GET' });
+}
+
+export async function getCoordinatorRequests(userId) {
+  return request(`/coordinators/user/${userId}/requests`, { method: 'GET' });
+}
+
+// Admin coordinator management APIs
+export async function getCoordinators() {
+  return request('/coordinators', { method: 'GET' });
+}
+
+export async function createCoordinator(coordinatorData) {
+  return request('/coordinators', {
+    method: 'POST',
+    body: JSON.stringify(coordinatorData)
+  });
+}
+
+export async function updateCoordinator(coordinatorId, coordinatorData) {
+  return request(`/coordinators/${coordinatorId}`, {
+    method: 'PUT',
+    body: JSON.stringify(coordinatorData)
+  });
+}
+
+export async function deactivateCoordinator(coordinatorId) {
+  return request(`/coordinators/${coordinatorId}`, { method: 'DELETE' });
+}
+
+export async function getAvailableCoordinatorUsers() {
+  return request('/coordinators/users/available', { method: 'GET' });
+}
+
+export async function getAllCoordinatorUsers() {
+  return request('/coordinators/users/all', { method: 'GET' });
+}

@@ -99,15 +99,6 @@ export default function CampDetail() {
           {camp.occupancy} of {camp.capacity} spaces occupied ({occupancyPercentage}%)
         </p>
       </div>
-
-      <div className="camp-actions">
-        <Link to="/volunteer-signup" className="btn btn-primary">
-          Volunteer at This Camp
-        </Link>
-        <Link to="/donate" className="btn btn-secondary">
-          Donate Resources
-        </Link>
-      </div>
     </div>
   );
 }

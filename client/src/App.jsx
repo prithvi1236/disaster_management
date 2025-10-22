@@ -17,7 +17,10 @@ import DonationForm from "./pages/DonationForm.jsx";
 import AdminVolunteers from "./pages/AdminVolunteers.jsx";
 import AdminRequests from "./pages/AdminRequests.jsx";
 import AdminDisasters from "./pages/AdminDisasters.jsx";
+import AdminCoordinators from "./pages/AdminCoordinators.jsx";
 import CoordinatorVolunteers from "./pages/CoordinatorVolunteers.jsx";
+import CoordinatorCamps from "./pages/CoordinatorCamps.jsx";
+import CoordinatorRequests from "./pages/CoordinatorRequests.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
@@ -70,6 +73,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/coordinators"
+            element={
+              <ProtectedRoute>
+                <AdminCoordinators />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Coordinator routes */}
           <Route
@@ -77,6 +88,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CoordinatorVolunteers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/camps"
+            element={
+              <ProtectedRoute>
+                <CoordinatorCamps />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/requests"
+            element={
+              <ProtectedRoute>
+                <CoordinatorRequests />
               </ProtectedRoute>
             }
           />
