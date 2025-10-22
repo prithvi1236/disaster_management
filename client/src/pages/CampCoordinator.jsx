@@ -12,7 +12,14 @@ import {
   submitDailyReport
 } from '../services/api';
 import { normalizeRole } from '../utils/auth';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import FormField from '../components/FormField';
+import { useLoadingState } from '../hooks/useLoadingState';
+import { useErrorHandler, formatErrorMessage } from '../hooks/useErrorHandler';
+import { validateForm, commonSchemas, hasFormErrors } from '../utils/validation';
 import '../styles/coordinator.css';
+import '../styles/form.css';
 
 export default function CampCoordinator() {
   const [user, setUser] = useState(null);
@@ -20,10 +27,36 @@ export default function CampCoordinator() {
   const [dashboardData, setDashboardData] = useState(null);
   const [resourceRequests, setResourceRequests] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
+  // Enhanced loading and error handling
+  const { loadingStates, setLoading, isLoading, isAnyLoading } = useLoadingState({
+    initial: true,
+    createResourceRequest: false,
+    updateCamp: false,
+    approveVolunteer: false,
+    rejectVolunteer: false,
+    submitReport: false
+  });
+
+  const { 
+    error, 
+    handleError, 
+    clearError, 
+    retry,
+    withErrorHandling 
+  } = useErrorHandler({
+    maxRetries: 2,
+    retryDelay: 1000
+  });
+
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState({
+    resourceRequest: {},
+    campUpdate: {},
+    dailyReport: {}
+  });
 
   // Resource request form
   const [resourceRequest, setResourceRequest] = useState({
@@ -58,7 +91,9 @@ export default function CampCoordinator() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
+      setLoading('initial', true);
+      clearError();
+      
       const token = localStorage.getItem('access_token');
       if (!token) {
         navigate('/login');
@@ -101,41 +136,40 @@ export default function CampCoordinator() {
       
     } catch (err) {
       console.error('Camp coordinator error:', err);
-      setError('Failed to load coordinator data');
+      handleError(err);
       if (err.message.includes('403') || err.message.includes('401')) {
         navigate('/login');
       }
     } finally {
-      setLoading(false);
+      setLoading('initial', false);
     }
   };
 
   const handleResourceRequest = async (e) => {
     e.preventDefault();
+    clearError();
+    setSuccess('');
+    
+    // Validate form
+    const errors = validateForm(resourceRequest, commonSchemas.resourceRequest);
+    
+    // Additional custom validation
+    if (!dashboardData?.camp?.camp_id) {
+      errors.general = 'No camp assigned. Cannot create resource request.';
+    }
+    
+    setFormErrors(prev => ({ ...prev, resourceRequest: errors }));
+    
+    if (hasFormErrors(errors)) {
+      return;
+    }
+    
     try {
-      setError('');
-      setSuccess('');
-      
-      // Validate form data
-      if (!resourceRequest.resource_type || !resourceRequest.quantity_requested || !resourceRequest.description) {
-        setError('Please fill in all required fields');
-        return;
-      }
-      
-      if (!dashboardData?.camp?.camp_id) {
-        setError('No camp assigned. Cannot create resource request.');
-        return;
-      }
-      
-      const quantity = parseInt(resourceRequest.quantity_requested);
-      if (isNaN(quantity) || quantity < 1) {
-        setError('Please enter a valid quantity (minimum 1)');
-        return;
-      }
+      setLoading('createResourceRequest', true);
       
       await createResourceRequest({
         ...resourceRequest,
-        quantity_requested: quantity,
+        quantity_requested: parseInt(resourceRequest.quantity_requested),
         camp_id: dashboardData.camp.camp_id
       });
       
@@ -147,38 +181,47 @@ export default function CampCoordinator() {
         description: '',
         camp_id: dashboardData.camp.camp_id
       });
+      setFormErrors(prev => ({ ...prev, resourceRequest: {} }));
       
       // Reload data to show the new request
-      loadData();
+      await loadData();
     } catch (err) {
       console.error('Resource request error:', err);
-      setError('Failed to submit resource request: ' + (err.message || 'Unknown error'));
+      handleError(new Error(`Failed to submit resource request: ${formatErrorMessage(err)}`));
+    } finally {
+      setLoading('createResourceRequest', false);
     }
   };
 
   const handleApproveVolunteer = async (assignmentId) => {
     try {
-      setError('');
+      clearError();
       setSuccess('');
+      setLoading('approveVolunteer', true);
       
       await approveVolunteerAssignment(assignmentId);
       setSuccess('Volunteer approved successfully!');
-      loadData();
+      await loadData();
     } catch (err) {
-      setError('Failed to approve volunteer: ' + err.message);
+      handleError(new Error(`Failed to approve volunteer: ${formatErrorMessage(err)}`));
+    } finally {
+      setLoading('approveVolunteer', false);
     }
   };
 
   const handleRejectVolunteer = async (assignmentId) => {
     try {
-      setError('');
+      clearError();
       setSuccess('');
+      setLoading('rejectVolunteer', true);
       
       await rejectVolunteerAssignment(assignmentId);
       setSuccess('Volunteer application rejected.');
-      loadData();
+      await loadData();
     } catch (err) {
-      setError('Failed to reject volunteer: ' + err.message);
+      handleError(new Error(`Failed to reject volunteer: ${formatErrorMessage(err)}`));
+    } finally {
+      setLoading('rejectVolunteer', false);
     }
   };
 
@@ -221,8 +264,12 @@ export default function CampCoordinator() {
     }
   };
 
-  if (loading) {
-    return <div className="coordinator-panel"><div className="loading">Loading coordinator panel...</div></div>;
+  if (loadingStates.initial) {
+    return (
+      <div className="coordinator-panel">
+        <LoadingSpinner size="large" message="Loading coordinator panel..." />
+      </div>
+    );
   }
 
   return (
@@ -232,7 +279,13 @@ export default function CampCoordinator() {
         <p>Welcome, {user?.full_name}! Manage camps and coordinate resources.</p>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <ErrorMessage
+          error={error}
+          onRetry={() => retry(loadData)}
+          onDismiss={clearError}
+        />
+      )}
       {success && <div className="success-message">{success}</div>}
 
       <div className="coordinator-tabs">
@@ -367,14 +420,25 @@ export default function CampCoordinator() {
             {dashboardData?.camp ? (
               <div className="create-request">
                 <h4>Create New Request</h4>
-                <form onSubmit={handleResourceRequest} className="resource-form">
+                <form onSubmit={handleResourceRequest} className={`resource-form ${isLoading('createResourceRequest') ? 'form-submitting' : ''}`}>
+                  {formErrors.resourceRequest.general && (
+                    <ErrorMessage 
+                      error={formErrors.resourceRequest.general} 
+                      type="warning" 
+                      className="inline"
+                    />
+                  )}
+                  
                   <div className="form-row">
-                    <label>
-                      Resource Type
+                    <FormField 
+                      label="Resource Type" 
+                      required 
+                      error={formErrors.resourceRequest.resource_type}
+                    >
                       <select
                         value={resourceRequest.resource_type}
                         onChange={(e) => setResourceRequest({...resourceRequest, resource_type: e.target.value})}
-                        required
+                        disabled={isLoading('createResourceRequest')}
                       >
                         <option value="Food">Food</option>
                         <option value="Water">Water</option>
@@ -384,45 +448,61 @@ export default function CampCoordinator() {
                         <option value="Equipment">Equipment</option>
                         <option value="Other">Other</option>
                       </select>
-                    </label>
-                    <label>
-                      Quantity
+                    </FormField>
+                    <FormField 
+                      label="Quantity" 
+                      required 
+                      error={formErrors.resourceRequest.quantity_requested}
+                    >
                       <input
                         type="number"
                         value={resourceRequest.quantity_requested}
                         onChange={(e) => setResourceRequest({...resourceRequest, quantity_requested: e.target.value})}
-                        required
                         min="1"
                         placeholder="Number of units needed"
+                        disabled={isLoading('createResourceRequest')}
                       />
-                    </label>
-                    <label>
-                      Urgency
+                    </FormField>
+                    <FormField 
+                      label="Urgency" 
+                      required 
+                      error={formErrors.resourceRequest.urgency}
+                    >
                       <select
                         value={resourceRequest.urgency}
                         onChange={(e) => setResourceRequest({...resourceRequest, urgency: e.target.value})}
-                        required
+                        disabled={isLoading('createResourceRequest')}
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
                         <option value="critical">Critical</option>
                       </select>
-                    </label>
+                    </FormField>
                   </div>
 
-                  <label>
-                    Description
+                  <FormField 
+                    label="Description" 
+                    required 
+                    error={formErrors.resourceRequest.description}
+                    helpText="Provide detailed description of the resource need"
+                  >
                     <textarea
                       value={resourceRequest.description}
                       onChange={(e) => setResourceRequest({...resourceRequest, description: e.target.value})}
-                      required
                       rows="3"
                       placeholder="Detailed description of the resource need..."
+                      disabled={isLoading('createResourceRequest')}
                     />
-                  </label>
+                  </FormField>
 
-                  <button type="submit" className="btn btn-primary">Submit Request</button>
+                  <button 
+                    type="submit" 
+                    className={`btn btn-primary ${isLoading('createResourceRequest') ? 'loading' : ''}`}
+                    disabled={isLoading('createResourceRequest')}
+                  >
+                    {isLoading('createResourceRequest') ? 'Submitting...' : 'Submit Request'}
+                  </button>
                 </form>
               </div>
             ) : (
@@ -505,16 +585,18 @@ export default function CampCoordinator() {
                     {assignment.status === 'PENDING' && (
                       <div className="volunteer-actions">
                         <button 
-                          className="btn btn-success btn-sm"
+                          className={`btn btn-success btn-sm ${isLoading('approveVolunteer') ? 'loading' : ''}`}
                           onClick={() => handleApproveVolunteer(assignment.assignment_id)}
+                          disabled={isLoading('approveVolunteer') || isLoading('rejectVolunteer')}
                         >
-                          Approve
+                          {isLoading('approveVolunteer') ? 'Approving...' : 'Approve'}
                         </button>
                         <button 
-                          className="btn btn-danger btn-sm"
+                          className={`btn btn-danger btn-sm ${isLoading('rejectVolunteer') ? 'loading' : ''}`}
                           onClick={() => handleRejectVolunteer(assignment.assignment_id)}
+                          disabled={isLoading('approveVolunteer') || isLoading('rejectVolunteer')}
                         >
-                          Reject
+                          {isLoading('rejectVolunteer') ? 'Rejecting...' : 'Reject'}
                         </button>
                       </div>
                     )}

@@ -141,6 +141,7 @@ class ErrorResponse(BaseModel):
     timestamp: datetime
     path: str
     status_code: int
+    error_code: Optional[str] = None
 
 
 # Disaster Schemas (Person 1's enhancements)

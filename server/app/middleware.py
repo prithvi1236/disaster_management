@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from app.schemas import ErrorResponse
+from app.error_handlers import APIError, create_error_response, handle_database_error, handle_validation_error
 
 # Configure logging
 import os
@@ -17,12 +18,14 @@ logger = logging.getLogger(__name__)
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
-    """Global error handling middleware."""
+    """Global error handling middleware with standardized error responses."""
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
             response = await call_next(request)
             return response
+        except APIError as exc:
+            return await self.handle_api_error(request, exc)
         except HTTPException as exc:
             return await self.handle_http_exception(request, exc)
         except RequestValidationError as exc:
@@ -32,13 +35,30 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             return await self.handle_general_error(request, exc)
     
+    async def handle_api_error(self, request: Request, exc: APIError) -> JSONResponse:
+        """Handle custom API errors."""
+        error_response = create_error_response(
+            message=exc.message,
+            status_code=exc.status_code,
+            details=exc.details,
+            path=str(request.url),
+            error_code=exc.error_code
+        )
+        
+        logger.warning(f"API Error: {exc.status_code} - {exc.message} - Path: {request.url}")
+        
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=error_response.model_dump(mode='json')
+        )
+    
     async def handle_http_exception(self, request: Request, exc: HTTPException) -> JSONResponse:
         """Handle HTTP exceptions."""
-        error_response = ErrorResponse(
+        error_response = create_error_response(
             message=exc.detail,
-            timestamp=datetime.utcnow(),
+            status_code=exc.status_code,
             path=str(request.url),
-            status_code=exc.status_code
+            error_code="HTTP_EXCEPTION"
         )
         
         logger.warning(f"HTTP Exception: {exc.status_code} - {exc.detail} - Path: {request.url}")
@@ -50,49 +70,47 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     
     async def handle_validation_error(self, request: Request, exc: RequestValidationError) -> JSONResponse:
         """Handle validation errors."""
-        error_details = {}
-        for error in exc.errors():
-            field = ".".join(str(loc) for loc in error["loc"])
-            error_details[field] = error["msg"]
-        
-        error_response = ErrorResponse(
-            message="Validation error",
-            details=error_details,
-            timestamp=datetime.utcnow(),
+        validation_error = handle_validation_error(exc)
+        error_response = create_error_response(
+            message=validation_error.message,
+            status_code=validation_error.status_code,
+            details=validation_error.details,
             path=str(request.url),
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+            error_code=validation_error.error_code
         )
         
-        logger.warning(f"Validation Error: {error_details} - Path: {request.url}")
+        logger.warning(f"Validation Error: {validation_error.details} - Path: {request.url}")
         
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=validation_error.status_code,
             content=error_response.model_dump(mode='json')
         )
     
     async def handle_database_error(self, request: Request, exc: SQLAlchemyError) -> JSONResponse:
         """Handle database errors."""
-        error_response = ErrorResponse(
-            message="Database error occurred",
-            timestamp=datetime.utcnow(),
+        db_error = handle_database_error(exc, "middleware operation")
+        error_response = create_error_response(
+            message=db_error.message,
+            status_code=db_error.status_code,
+            details=db_error.details,
             path=str(request.url),
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+            error_code=db_error.error_code
         )
         
         logger.error(f"Database Error: {str(exc)} - Path: {request.url}")
         
         return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=db_error.status_code,
             content=error_response.model_dump(mode='json')
         )
     
     async def handle_general_error(self, request: Request, exc: Exception) -> JSONResponse:
         """Handle general exceptions."""
-        error_response = ErrorResponse(
+        error_response = create_error_response(
             message="Internal server error",
-            timestamp=datetime.utcnow(),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             path=str(request.url),
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            error_code="INTERNAL_SERVER_ERROR"
         )
         
         logger.error(f"General Error: {str(exc)} - Path: {request.url}")

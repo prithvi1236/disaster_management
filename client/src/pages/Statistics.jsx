@@ -1,18 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { getDashboardStats, getDisasterStats, getRecentActivity } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import { useLoadingState } from '../hooks/useLoadingState';
+import { useErrorHandler, formatErrorMessage } from '../hooks/useErrorHandler';
 import '../styles/statistics.css';
 
 export default function Statistics() {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [disasterStats, setDisasterStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [loadingStates, setLoadingStates] = useState({
+  
+  const { loadingStates, setLoading, isAnyLoading } = useLoadingState({
     dashboard: false,
     disasters: false,
-    activity: false
+    activity: false,
+    initial: true
+  });
+
+  const { 
+    error, 
+    handleError, 
+    clearError, 
+    retry, 
+    retryCount,
+    canRetry 
+  } = useErrorHandler({
+    maxRetries: 3,
+    retryDelay: 1000
   });
 
   useEffect(() => {
@@ -21,9 +36,11 @@ export default function Statistics() {
 
   const loadStatistics = async () => {
     try {
-      setLoading(true);
-      setError('');
-      setLoadingStates({ dashboard: true, disasters: true, activity: true });
+      setLoading('initial', true);
+      setLoading('dashboard', true);
+      setLoading('disasters', true);
+      setLoading('activity', true);
+      clearError();
       
       const results = await Promise.allSettled([
         getDashboardStats(),
@@ -37,6 +54,7 @@ export default function Statistics() {
       } else {
         console.error('Dashboard stats error:', results[0].reason);
       }
+      setLoading('dashboard', false);
 
       // Handle disaster stats
       if (results[1].status === 'fulfilled') {
@@ -44,6 +62,7 @@ export default function Statistics() {
       } else {
         console.error('Disaster stats error:', results[1].reason);
       }
+      setLoading('disasters', false);
 
       // Handle recent activity
       if (results[2].status === 'fulfilled') {
@@ -51,35 +70,39 @@ export default function Statistics() {
       } else {
         console.error('Recent activity error:', results[2].reason);
       }
+      setLoading('activity', false);
 
       // Check if all requests failed
       const allFailed = results.every(result => result.status === 'rejected');
       if (allFailed) {
         const firstError = results[0].reason;
-        setError(firstError?.message || 'Failed to load statistics');
+        handleError(firstError || new Error('Failed to load statistics'));
       }
 
     } catch (err) {
       console.error('Statistics error:', err);
-      setError(err?.message || 'Failed to load statistics');
+      handleError(err);
     } finally {
-      setLoading(false);
-      setLoadingStates({ dashboard: false, disasters: false, activity: false });
+      setLoading('initial', false);
     }
   };
 
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-    loadStatistics();
+  const handleRetry = async () => {
+    try {
+      await retry(loadStatistics);
+    } catch (err) {
+      // Error is already handled by the retry function
+      console.error('Retry failed:', err);
+    }
   };
 
-  if (loading && !dashboardStats && !disasterStats && !recentActivity) {
+  if (loadingStates.initial && !dashboardStats && !disasterStats && !recentActivity) {
     return (
       <div className="statistics-page">
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <p>Loading statistics...</p>
-        </div>
+        <LoadingSpinner 
+          size="large" 
+          message="Loading statistics..." 
+        />
       </div>
     );
   }
@@ -90,25 +113,27 @@ export default function Statistics() {
   if (hasError) {
     return (
       <div className="statistics-page">
-        <div className="error">
-          <h2>Unable to Load Statistics</h2>
-          <p>{error}</p>
-          <div className="error-actions">
-            <button onClick={handleRetry} className="retry-button">
-              {loading ? 'Retrying...' : 'Retry'}
-            </button>
-            {retryCount > 0 && (
-              <p className="retry-info">Retry attempt: {retryCount}</p>
-            )}
+        <div className="page-header">
+          <h1>System Statistics</h1>
+        </div>
+        <ErrorMessage
+          error={formatErrorMessage(error)}
+          onRetry={canRetry ? handleRetry : null}
+          retryText={isAnyLoading() ? 'Retrying...' : 'Retry'}
+          showRetry={canRetry}
+        />
+        {retryCount > 0 && (
+          <div className="retry-info">
+            <p>Retry attempt: {retryCount}</p>
           </div>
-          <div className="error-help">
-            <p>If the problem persists, please:</p>
-            <ul>
-              <li>Check your internet connection</li>
-              <li>Refresh the page</li>
-              <li>Contact system administrator</li>
-            </ul>
-          </div>
+        )}
+        <div className="error-help">
+          <p>If the problem persists, please:</p>
+          <ul>
+            <li>Check your internet connection</li>
+            <li>Refresh the page</li>
+            <li>Contact system administrator</li>
+          </ul>
         </div>
       </div>
     );
@@ -119,12 +144,14 @@ export default function Statistics() {
       <div className="page-header">
         <h1>System Statistics</h1>
         {error && hasAnyData && (
-          <div className="partial-error-banner">
-            <span>⚠️ Some statistics may be incomplete due to loading errors.</span>
-            <button onClick={handleRetry} className="retry-link">
-              Retry
-            </button>
-          </div>
+          <ErrorMessage
+            error="Some statistics may be incomplete due to loading errors."
+            type="warning"
+            onRetry={canRetry ? handleRetry : null}
+            retryText={isAnyLoading() ? 'Retrying...' : 'Retry'}
+            showRetry={canRetry}
+            className="partial-error-banner"
+          />
         )}
       </div>
 
@@ -132,7 +159,9 @@ export default function Statistics() {
       <section className="stats-section">
         <div className="section-header">
           <h2>Overview</h2>
-          {loadingStates.dashboard && <div className="section-loading">Loading...</div>}
+          {loadingStates.dashboard && (
+            <LoadingSpinner size="small" message="Loading..." inline />
+          )}
         </div>
         {dashboardStats ? (
           <div className="stats-grid">
@@ -159,10 +188,14 @@ export default function Statistics() {
           </div>
         ) : (
           <div className="stats-unavailable">
-            <p>Dashboard statistics are currently unavailable.</p>
-            <button onClick={handleRetry} className="retry-button-small">
-              Try Again
-            </button>
+            <ErrorMessage
+              error="Dashboard statistics are currently unavailable."
+              type="info"
+              onRetry={canRetry ? handleRetry : null}
+              retryText={isAnyLoading() ? 'Loading...' : 'Try Again'}
+              showRetry={canRetry}
+              className="inline"
+            />
           </div>
         )}
       </section>
@@ -171,7 +204,9 @@ export default function Statistics() {
       <section className="stats-section">
         <div className="section-header">
           <h2>Disaster Breakdown</h2>
-          {loadingStates.disasters && <div className="section-loading">Loading...</div>}
+          {loadingStates.disasters && (
+            <LoadingSpinner size="small" message="Loading..." inline />
+          )}
         </div>
         {disasterStats ? (
           <div className="breakdown-grid">
@@ -223,10 +258,14 @@ export default function Statistics() {
           </div>
         ) : (
           <div className="stats-unavailable">
-            <p>Disaster breakdown statistics are currently unavailable.</p>
-            <button onClick={handleRetry} className="retry-button-small">
-              Try Again
-            </button>
+            <ErrorMessage
+              error="Disaster breakdown statistics are currently unavailable."
+              type="info"
+              onRetry={canRetry ? handleRetry : null}
+              retryText={isAnyLoading() ? 'Loading...' : 'Try Again'}
+              showRetry={canRetry}
+              className="inline"
+            />
           </div>
         )}
       </section>
@@ -235,7 +274,9 @@ export default function Statistics() {
       <section className="stats-section">
         <div className="section-header">
           <h2>Recent Activity</h2>
-          {loadingStates.activity && <div className="section-loading">Loading...</div>}
+          {loadingStates.activity && (
+            <LoadingSpinner size="small" message="Loading..." inline />
+          )}
         </div>
         {recentActivity ? (
           <div className="activity-grid">
@@ -290,10 +331,14 @@ export default function Statistics() {
           </div>
         ) : (
           <div className="stats-unavailable">
-            <p>Recent activity data is currently unavailable.</p>
-            <button onClick={handleRetry} className="retry-button-small">
-              Try Again
-            </button>
+            <ErrorMessage
+              error="Recent activity data is currently unavailable."
+              type="info"
+              onRetry={canRetry ? handleRetry : null}
+              retryText={isAnyLoading() ? 'Loading...' : 'Try Again'}
+              showRetry={canRetry}
+              className="inline"
+            />
           </div>
         )}
       </section>

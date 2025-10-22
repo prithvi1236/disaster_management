@@ -20,7 +20,14 @@ import {
   getResourceReports
 } from '../services/api';
 import { normalizeRole } from '../utils/auth';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import FormField from '../components/FormField';
+import { useLoadingState } from '../hooks/useLoadingState';
+import { useErrorHandler, formatErrorMessage } from '../hooks/useErrorHandler';
+import { validateForm, commonSchemas, hasFormErrors } from '../utils/validation';
 import '../styles/admin.css';
+import '../styles/form.css';
 
 export default function AdminManagement() {
   const [user, setUser] = useState(null);
@@ -30,10 +37,36 @@ export default function AdminManagement() {
   const [users, setUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
+  // Enhanced loading and error handling
+  const { loadingStates, setLoading, isLoading, isAnyLoading } = useLoadingState({
+    initial: true,
+    createDisaster: false,
+    createCamp: false,
+    deleteDisaster: false,
+    deleteCamp: false,
+    approveUser: false,
+    rejectUser: false
+  });
+
+  const { 
+    error, 
+    handleError, 
+    clearError, 
+    retry,
+    withErrorHandling 
+  } = useErrorHandler({
+    maxRetries: 2,
+    retryDelay: 1000
+  });
+
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState({
+    disaster: {},
+    camp: {}
+  });
 
   // Form states
   const [disasterForm, setDisasterForm] = useState({
@@ -61,7 +94,9 @@ export default function AdminManagement() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
+      setLoading('initial', true);
+      clearError();
+      
       const token = localStorage.getItem('access_token');
       if (!token) {
         navigate('/login');
@@ -91,68 +126,48 @@ export default function AdminManagement() {
       setDashboardStats(statsData);
     } catch (err) {
       console.error('Admin management error:', err);
-      setError('Failed to load admin data');
+      handleError(err);
       if (err.message.includes('403') || err.message.includes('401')) {
         navigate('/login');
       }
     } finally {
-      setLoading(false);
+      setLoading('initial', false);
     }
   };
 
   const handleCreateDisaster = async (e) => {
     e.preventDefault();
-    setError('');
+    clearError();
     setSuccess('');
-    setLoading(true);
     
-    // Enhanced validation
-    if (!disasterForm.name.trim()) {
-      setError('Disaster name is required');
-      setLoading(false);
-      return;
-    }
-    if (disasterForm.name.trim().length < 3) {
-      setError('Disaster name must be at least 3 characters long');
-      setLoading(false);
-      return;
-    }
-    if (!disasterForm.type) {
-      setError('Disaster type is required');
-      setLoading(false);
-      return;
-    }
-    if (!disasterForm.location.trim()) {
-      setError('Location is required');
-      setLoading(false);
-      return;
-    }
-    if (disasterForm.location.trim().length < 3) {
-      setError('Location must be at least 3 characters long');
-      setLoading(false);
-      return;
-    }
-    if (!disasterForm.start_date) {
-      setError('Start date is required');
-      setLoading(false);
-      return;
+    // Validate form
+    const errors = validateForm(disasterForm, commonSchemas.disaster);
+    
+    // Additional custom validation
+    if (disasterForm.start_date) {
+      const startDate = new Date(disasterForm.start_date);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      if (startDate > tomorrow) {
+        errors.start_date = 'Start date cannot be more than 1 day in the future';
+      }
     }
     
-    // Validate start date is not in the future by more than 1 day
-    const startDate = new Date(disasterForm.start_date);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (startDate > tomorrow) {
-      setError('Start date cannot be more than 1 day in the future');
-      setLoading(false);
+    setFormErrors(prev => ({ ...prev, disaster: errors }));
+    
+    if (hasFormErrors(errors)) {
       return;
     }
     
     try {
+      setLoading('createDisaster', true);
+      
+      const startDate = new Date(disasterForm.start_date);
       await createDisaster({
         ...disasterForm,
         start_date: startDate.toISOString()
       });
+      
       setSuccess('Disaster created successfully!');
       setDisasterForm({
         name: '',
@@ -163,77 +178,49 @@ export default function AdminManagement() {
         start_date: '',
         description: ''
       });
+      setFormErrors(prev => ({ ...prev, disaster: {} }));
       await loadData();
     } catch (err) {
       console.error('Create disaster error:', err);
-      setError('Failed to create disaster: ' + (err.message || 'Unknown error occurred'));
+      handleError(new Error(`Failed to create disaster: ${formatErrorMessage(err)}`));
     } finally {
-      setLoading(false);
+      setLoading('createDisaster', false);
     }
   };
 
   const handleCreateCamp = async (e) => {
     e.preventDefault();
-    setError('');
+    clearError();
     setSuccess('');
-    setLoading(true);
     
-    // Enhanced validation
-    if (!campForm.name.trim()) {
-      setError('Camp name is required');
-      setLoading(false);
-      return;
-    }
-    if (campForm.name.trim().length < 3) {
-      setError('Camp name must be at least 3 characters long');
-      setLoading(false);
-      return;
-    }
-    if (!campForm.location.trim()) {
-      setError('Location is required');
-      setLoading(false);
-      return;
-    }
-    if (campForm.location.trim().length < 3) {
-      setError('Location must be at least 3 characters long');
-      setLoading(false);
-      return;
-    }
-    if (!campForm.capacity || parseInt(campForm.capacity) < 1) {
-      setError('Valid capacity is required (minimum 1)');
-      setLoading(false);
-      return;
-    }
-    if (parseInt(campForm.capacity) > 10000) {
-      setError('Capacity cannot exceed 10,000 people');
-      setLoading(false);
-      return;
-    }
-    if (!campForm.disaster_id) {
-      setError('Please select a disaster');
-      setLoading(false);
-      return;
+    // Validate form
+    const errors = validateForm(campForm, commonSchemas.camp);
+    
+    // Additional custom validation
+    if (campForm.disaster_id) {
+      const selectedDisaster = disasters.find(d => d.disaster_id === parseInt(campForm.disaster_id));
+      if (!selectedDisaster) {
+        errors.disaster_id = 'Selected disaster not found. Please refresh and try again.';
+      } else if (selectedDisaster.status === 'Resolved') {
+        errors.disaster_id = 'Cannot create camps for resolved disasters';
+      }
     }
     
-    // Validate disaster exists and is active
-    const selectedDisaster = disasters.find(d => d.disaster_id === parseInt(campForm.disaster_id));
-    if (!selectedDisaster) {
-      setError('Selected disaster not found. Please refresh and try again.');
-      setLoading(false);
-      return;
-    }
-    if (selectedDisaster.status === 'Resolved') {
-      setError('Cannot create camps for resolved disasters');
-      setLoading(false);
+    setFormErrors(prev => ({ ...prev, camp: errors }));
+    
+    if (hasFormErrors(errors)) {
       return;
     }
     
     try {
+      setLoading('createCamp', true);
+      
       await createCamp({
         ...campForm,
         capacity: parseInt(campForm.capacity),
         disaster_id: parseInt(campForm.disaster_id)
       });
+      
       setSuccess('Camp created successfully!');
       setCampForm({
         name: '',
@@ -243,6 +230,7 @@ export default function AdminManagement() {
         facilities: '',
         disaster_id: ''
       });
+      setFormErrors(prev => ({ ...prev, camp: {} }));
       await loadData();
     } catch (err) {
       console.error('Create camp error:', err);
@@ -252,11 +240,11 @@ export default function AdminManagement() {
       } else if (err.message.includes('foreign key constraint')) {
         errorMessage += 'Selected disaster is no longer available. Please refresh and try again.';
       } else {
-        errorMessage += (err.message || 'Unknown error occurred');
+        errorMessage += formatErrorMessage(err);
       }
-      setError(errorMessage);
+      handleError(new Error(errorMessage));
     } finally {
-      setLoading(false);
+      setLoading('createCamp', false);
     }
   };
 
@@ -287,9 +275,9 @@ export default function AdminManagement() {
     }
     
     try {
-      setError('');
+      clearError();
       setSuccess('');
-      setLoading(true);
+      setLoading('deleteDisaster', true);
       
       await deleteDisaster(id);
       setSuccess(`Disaster "${disasterName}" and all associated data deleted successfully!`);
@@ -300,11 +288,11 @@ export default function AdminManagement() {
       if (err.message.includes('foreign key constraint')) {
         errorMessage += 'Cannot delete disaster because it has associated data. Please remove all camps and related data first.';
       } else {
-        errorMessage += (err.message || 'Unknown error occurred');
+        errorMessage += formatErrorMessage(err);
       }
-      setError(errorMessage);
+      handleError(new Error(errorMessage));
     } finally {
-      setLoading(false);
+      setLoading('deleteDisaster', false);
     }
   };
 
@@ -341,9 +329,9 @@ export default function AdminManagement() {
     }
     
     try {
-      setError('');
+      clearError();
       setSuccess('');
-      setLoading(true);
+      setLoading('deleteCamp', true);
       
       await deleteCamp(id);
       setSuccess(`Camp "${campName}" and all associated data deleted successfully!`);
@@ -356,11 +344,11 @@ export default function AdminManagement() {
       } else if (err.message.includes('occupancy')) {
         errorMessage += 'Cannot delete camp with current occupants. Please relocate all occupants first.';
       } else {
-        errorMessage += (err.message || 'Unknown error occurred');
+        errorMessage += formatErrorMessage(err);
       }
-      setError(errorMessage);
+      handleError(new Error(errorMessage));
     } finally {
-      setLoading(false);
+      setLoading('deleteCamp', false);
     }
   };
 
@@ -376,9 +364,9 @@ export default function AdminManagement() {
 
   const handleApproveUser = async (userId, approved, assignedCampId = null) => {
     try {
-      setError('');
+      clearError();
       setSuccess('');
-      setLoading(true);
+      setLoading('approveUser', true);
       
       // Enhanced validation for coordinator approval
       const user = pendingUsers.find(u => u.user_id === userId);
@@ -391,7 +379,7 @@ export default function AdminManagement() {
             'provide their qualifications before approval.'
           );
           if (!confirmApproval) {
-            setLoading(false);
+            setLoading('approveUser', false);
             return;
           }
         }
@@ -409,7 +397,7 @@ export default function AdminManagement() {
             'This coordinator will have full management access to this camp.'
           );
           if (!confirmAssignment) {
-            setLoading(false);
+            setLoading('approveUser', false);
             return;
           }
         }
@@ -421,7 +409,7 @@ export default function AdminManagement() {
         assigned_camp_id: assignedCampId ? parseInt(assignedCampId) : null
       });
       
-      const user = pendingUsers.find(u => u.user_id === userId);
+      // Use the existing user variable instead of redeclaring
       let successMessage = `User ${user?.full_name || 'Unknown'} ${approved ? 'approved' : 'rejected'} successfully!`;
       
       if (approved && normalizeRole(user?.role) === 'coordinator' && assignedCampId) {
@@ -439,11 +427,11 @@ export default function AdminManagement() {
       } else if (err.message.includes('already assigned')) {
         errorMessage += 'Selected camp already has a coordinator assigned. Please refresh and select another camp.';
       } else {
-        errorMessage += (err.message || 'Unknown error occurred');
+        errorMessage += formatErrorMessage(err);
       }
-      setError(errorMessage);
+      handleError(new Error(errorMessage));
     } finally {
-      setLoading(false);
+      setLoading('approveUser', false);
     }
   };
 
@@ -572,8 +560,12 @@ export default function AdminManagement() {
     }
   };
 
-  if (loading) {
-    return <div className="admin-management"><div className="loading">Loading admin panel...</div></div>;
+  if (loadingStates.initial) {
+    return (
+      <div className="admin-management">
+        <LoadingSpinner size="large" message="Loading admin panel..." />
+      </div>
+    );
   }
 
   return (
@@ -583,7 +575,13 @@ export default function AdminManagement() {
         <p>Welcome, {user?.full_name}! You have full system access.</p>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <ErrorMessage
+          error={error}
+          onRetry={() => retry(loadData)}
+          onDismiss={clearError}
+        />
+      )}
       {success && <div className="success-message">{success}</div>}
 
       <div className="admin-tabs">
@@ -752,16 +750,17 @@ export default function AdminManagement() {
                             const assignedCampId = campSelect ? (campSelect.value || null) : null;
                             handleApproveUser(pendingUser.user_id, true, assignedCampId);
                           }}
-                          disabled={loading}
+                          disabled={isLoading('approveUser')}
+                          className={`btn btn-success btn-sm ${isLoading('approveUser') ? 'loading' : ''}`}
                         >
-                          {loading ? 'Approving...' : 'Approve'}
+                          {isLoading('approveUser') ? 'Approving...' : 'Approve'}
                         </button>
                         <button 
-                          className="btn btn-danger btn-sm"
+                          className={`btn btn-danger btn-sm ${isLoading('rejectUser') ? 'loading' : ''}`}
                           onClick={() => handleRejectUser(pendingUser.user_id)}
-                          disabled={loading}
+                          disabled={isLoading('rejectUser')}
                         >
-                          {loading ? 'Rejecting...' : 'Reject'}
+                          {isLoading('rejectUser') ? 'Rejecting...' : 'Reject'}
                         </button>
                       </div>
                     </div>
@@ -776,23 +775,29 @@ export default function AdminManagement() {
           <div className="disasters-management">
             <div className="create-section">
               <h3>Create New Disaster</h3>
-              <form onSubmit={handleCreateDisaster} className="admin-form">
+              <form onSubmit={handleCreateDisaster} className={`admin-form ${isLoading('createDisaster') ? 'form-submitting' : ''}`}>
                 <div className="form-row">
-                  <label>
-                    Disaster Name
+                  <FormField 
+                    label="Disaster Name" 
+                    required 
+                    error={formErrors.disaster.name}
+                  >
                     <input
                       type="text"
                       value={disasterForm.name}
                       onChange={(e) => setDisasterForm({...disasterForm, name: e.target.value})}
-                      required
+                      disabled={isLoading('createDisaster')}
                     />
-                  </label>
-                  <label>
-                    Type
+                  </FormField>
+                  <FormField 
+                    label="Type" 
+                    required 
+                    error={formErrors.disaster.type}
+                  >
                     <select
                       value={disasterForm.type}
                       onChange={(e) => setDisasterForm({...disasterForm, type: e.target.value})}
-                      required
+                      disabled={isLoading('createDisaster')}
                     >
                       <option value="">Select Type</option>
                       <option value="Earthquake">Earthquake</option>
@@ -803,64 +808,85 @@ export default function AdminManagement() {
                       <option value="Heat Wave">Heat Wave</option>
                       <option value="Fire">Fire</option>
                     </select>
-                  </label>
+                  </FormField>
                 </div>
                 <div className="form-row">
-                  <label>
-                    Location
+                  <FormField 
+                    label="Location" 
+                    required 
+                    error={formErrors.disaster.location}
+                  >
                     <input
                       type="text"
                       value={disasterForm.location}
                       onChange={(e) => setDisasterForm({...disasterForm, location: e.target.value})}
-                      required
+                      disabled={isLoading('createDisaster')}
                     />
-                  </label>
-                  <label>
-                    Severity Level
+                  </FormField>
+                  <FormField 
+                    label="Severity Level" 
+                    error={formErrors.disaster.severity_level}
+                  >
                     <select
                       value={disasterForm.severity_level}
                       onChange={(e) => setDisasterForm({...disasterForm, severity_level: e.target.value})}
+                      disabled={isLoading('createDisaster')}
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
                       <option value="High">High</option>
                       <option value="Critical">Critical</option>
                     </select>
-                  </label>
+                  </FormField>
                 </div>
                 <div className="form-row">
-                  <label>
-                    Start Date
+                  <FormField 
+                    label="Start Date" 
+                    required 
+                    error={formErrors.disaster.start_date}
+                    helpText="Cannot be more than 1 day in the future"
+                  >
                     <input
                       type="datetime-local"
                       value={disasterForm.start_date}
                       onChange={(e) => setDisasterForm({...disasterForm, start_date: e.target.value})}
-                      required
+                      disabled={isLoading('createDisaster')}
                     />
-                  </label>
-                  <label>
-                    Status
+                  </FormField>
+                  <FormField 
+                    label="Status" 
+                    error={formErrors.disaster.status}
+                  >
                     <select
                       value={disasterForm.status}
                       onChange={(e) => setDisasterForm({...disasterForm, status: e.target.value})}
+                      disabled={isLoading('createDisaster')}
                     >
                       <option value="Active">Active</option>
                       <option value="Monitoring">Monitoring</option>
                       <option value="Recovery">Recovery</option>
                       <option value="Resolved">Resolved</option>
                     </select>
-                  </label>
+                  </FormField>
                 </div>
-                <label>
-                  Description
+                <FormField 
+                  label="Description" 
+                  error={formErrors.disaster.description}
+                  helpText="Optional additional details about the disaster"
+                >
                   <textarea
                     value={disasterForm.description}
                     onChange={(e) => setDisasterForm({...disasterForm, description: e.target.value})}
                     rows="3"
+                    disabled={isLoading('createDisaster')}
                   />
-                </label>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Creating...' : 'Create Disaster'}
+                </FormField>
+                <button 
+                  type="submit" 
+                  className={`btn btn-primary ${isLoading('createDisaster') ? 'loading' : ''}`}
+                  disabled={isLoading('createDisaster')}
+                >
+                  {isLoading('createDisaster') ? 'Creating...' : 'Create Disaster'}
                 </button>
               </form>
             </div>

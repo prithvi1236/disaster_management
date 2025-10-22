@@ -4,6 +4,9 @@ from typing import List, Optional
 from app.database import get_db
 from app import models, schemas
 from app.auth_utils import get_current_active_user, get_coordinator_or_admin, get_admin_user
+from app.error_handlers import NotFoundError, safe_db_operation, log_error
+from app.validators import validate_resource_request_data, validate_positive_integer
+from app.database_constraints import validate_foreign_key_constraints
 
 router = APIRouter(prefix="/api/resource-requests", tags=["resource-requests"])
 
@@ -45,9 +48,31 @@ async def create_resource_request(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_coordinator_or_admin)
 ):
-    """Create a new resource request (camp coordinator or admin)"""
-    # Verify camp exists
-    camp = db.query(models.Camp).filter(models.Camp.camp_id == request_data.camp_id).first()
+    """Create a new resource request (camp coordinator or admin) with comprehensive validation"""
+    request_dict = request_data.dict()
+    
+    # Validate resource request data
+    validate_resource_request_data(request_dict, db)
+    
+    # Validate foreign key constraints
+    validate_foreign_key_constraints(db, "resource_requests", request_dict)
+    
+    # Add coordinator information
+    request_dict["coordinator_id"] = current_user.user_id
+    
+    # Safe database operation
+    def create_operation():
+        db_request = models.ResourceRequest(**request_dict)
+        db.add(db_request)
+        db.commit()
+        db.refresh(db_request)
+        return db_request
+    
+    try:
+        return safe_db_operation(db, create_operation, "create_resource_request")
+    except Exception as e:
+        log_error(e, "create_resource_request", current_user.user_id)
+        raise
     if not camp:
         raise HTTPException(status_code=404, detail="Camp not found")
     
