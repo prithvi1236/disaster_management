@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -8,13 +8,22 @@ import enum
 class UserRole(enum.Enum):
     ADMIN = "admin"
     USER = "user"
+    CAMP_COORDINATOR = "camp_coordinator"
 
 
 class RequestStatus(enum.Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    FULFILLED = "fulfilled"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    FULFILLED = "FULFILLED"
+
+
+class VolunteerStatus(enum.Enum):
+    PENDING = "PENDING"  # Waiting for admin approval
+    APPROVED = "APPROVED"  # Approved by admin, can be assigned
+    REJECTED = "REJECTED"  # Rejected by admin
+    ASSIGNED = "ASSIGNED"  # Currently assigned to a camp
+    INACTIVE = "INACTIVE"  # Temporarily inactive
 
 
 class User(Base):
@@ -34,6 +43,8 @@ class User(Base):
     created_disasters = relationship("Disaster", back_populates="created_by_user")
     created_camps = relationship("Camp", back_populates="created_by_user")
     managed_assignments = relationship("VolunteerAssignment", back_populates="assigned_by_user")
+    coordinated_camps = relationship("CampCoordinator", back_populates="coordinator_user")
+    approved_requests = relationship("ResourceRequest", foreign_keys="ResourceRequest.approved_by", back_populates="approved_by_user")
 
 
 class Disaster(Base):
@@ -79,6 +90,31 @@ class Camp(Base):
     resource_requests = relationship("ResourceRequest", back_populates="camp")
     volunteer_assignments = relationship("VolunteerAssignment", back_populates="camp")
     created_by_user = relationship("User", back_populates="created_camps")
+    coordinators = relationship("CampCoordinator", back_populates="camp")
+
+
+class CampCoordinator(Base):
+    __tablename__ = "camp_coordinators"
+
+    coordinator_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    camp_id = Column(Integer, ForeignKey("camps.camp_id"), nullable=False)
+    assigned_date = Column(DateTime, server_default=func.now())
+    is_active = Column(Boolean, default=True)
+    responsibilities = Column(Text, nullable=True)  # Description of coordinator responsibilities
+    contact_hours = Column(String(255), nullable=True)  # Available contact hours
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Ensure one coordinator per user (active coordinators only)
+    __table_args__ = (
+        UniqueConstraint('user_id', 'is_active', name='unique_active_coordinator_per_user'),
+    )
+
+    # Relationships
+    coordinator_user = relationship("User", back_populates="coordinated_camps")
+    camp = relationship("Camp", back_populates="coordinators")
+    resource_requests = relationship("ResourceRequest", back_populates="requested_by_coordinator")
 
 
 class Donation(Base):
@@ -112,13 +148,17 @@ class Volunteer(Base):
     availability = Column(String(255), nullable=True)
     emergency_contact = Column(String(255), nullable=True)
     background_check = Column(Boolean, default=False)
-    status = Column(String(50), default="Active")
+    status = Column(Enum(VolunteerStatus), default=VolunteerStatus.PENDING, nullable=False)
     disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=True)
+    approved_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who approved
+    approved_date = Column(DateTime, nullable=True)
+    rejection_reason = Column(Text, nullable=True)  # Reason if rejected
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     volunteer_assignments = relationship("VolunteerAssignment", back_populates="volunteer")
+    approved_by_user = relationship("User", foreign_keys=[approved_by])
 
 
 class ResourceRequest(Base):
@@ -136,7 +176,10 @@ class ResourceRequest(Base):
     disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=True)
     camp_id = Column(Integer, ForeignKey("camps.camp_id"), nullable=True)
     
-    requested_by = Column(String(255), nullable=True)  # Who made the request
+    # Who made the request - can be coordinator or admin
+    requested_by_coordinator_id = Column(Integer, ForeignKey("camp_coordinators.coordinator_id"), nullable=True)
+    requested_by_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # For admin requests
+    
     approved_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who approved
     
     request_date = Column(DateTime, server_default=func.now())
@@ -150,6 +193,9 @@ class ResourceRequest(Base):
     # Relationships
     disaster = relationship("Disaster", back_populates="resource_requests")
     camp = relationship("Camp", back_populates="resource_requests")
+    requested_by_coordinator = relationship("CampCoordinator", back_populates="resource_requests")
+    requested_by_user = relationship("User", foreign_keys=[requested_by_user_id])
+    approved_by_user = relationship("User", foreign_keys=[approved_by], back_populates="approved_requests")
 
 
 class VolunteerAssignment(Base):

@@ -1,234 +1,174 @@
 .disaster-detail {
-  padding: 2rem;
-  color: #f5f5f5;
-  min-height: 60vh;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  border-radius: 16px;
-  margin: 1rem;
+  padding: var(--spacing-2xl) 0;
 }
 
 .loading-state,
 .error-state {
   text-align: center;
-  padding: 3rem 1rem;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-4xl) var(--spacing-lg);
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-xl);
 }
 
 .error-state h2 {
-  margin-bottom: 1rem;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-primary);
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
-  margin-bottom: 2rem;
-  font-size: 0.9rem;
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-sm);
 }
 
 .breadcrumb-link {
-  color: #3b82f6;
-  text-decoration: none;
-}
-
-.breadcrumb-link:hover {
-  color: #2563eb;
+  color: var(--color-primary-light);
 }
 
 .breadcrumb-separator {
-  margin: 0 0.5rem;
-  color: #a1a1a6;
+  margin: 0 var(--spacing-sm);
+  color: var(--color-text-muted);
 }
 
 .breadcrumb-current {
-  color: #a1a1a6;
+  color: var(--color-text-muted);
 }
 
 .detail-hero {
-  margin-bottom: 3rem;
+  margin-bottom: var(--spacing-3xl);
 }
 
 .hero-card {
-  max-width: none;
-}
-
-.detail-card {
-  background: rgba(42, 42, 42, 0.95);
-  backdrop-filter: blur(12px);
-  padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.detail-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: var(--spacing-2xl);
 }
 
 .disaster-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-xl);
 }
 
 .disaster-title {
-  margin: 0 0 1rem 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: #ffffff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: var(--font-size-4xl);
 }
 
 .disaster-badges {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
 }
 
 .disaster-type {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background-color: var(--badge-secondary-bg);
+  color: var(--badge-secondary-text);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .severity-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .severity-high {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger-light);
 }
 
 .severity-medium {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fde047;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning-light);
 }
 
 .severity-low {
-  background: rgba(34, 197, 94, 0.2);
-  color: #86efac;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-success-light);
 }
 
 .disaster-details {
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-xl);
 }
 
 .detail-item {
-  margin: 0.75rem 0;
+  margin: var(--spacing-md) 0;
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .detail-item strong {
-  color: #ffffff;
-  min-width: 80px;
-  font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  color: var(--color-text-primary);
+  min-width: 100px;
+  font-weight: var(--font-weight-semibold);
 }
 
 .detail-item .status {
-  margin-left: 0.5rem;
-}
-
-.description {
-  flex-direction: column;
-  align-items: flex-start;
+  margin-left: var(--spacing-sm);
 }
 
 .description p {
-  margin: 0.5rem 0 0 0;
-  color: #e5e7eb;
-  line-height: 1.6;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  margin-top: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
 }
 
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
+  margin-top: var(--spacing-xl);
 }
 
 .detail-sections {
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: var(--spacing-3xl);
 }
 
 .section-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-xl);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .section-title {
-  font-size: 1.5rem;
+  font-size: var(--font-size-2xl);
   margin: 0;
-  color: #ffffff;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.btn-small {
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
 }
 
 .empty-section {
   text-align: center;
-  padding: 2rem;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.empty-section p {
-  margin: 0.5rem 0;
+  padding: var(--spacing-2xl);
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-lg);
 }
 
 .detail-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  gap: var(--spacing-xl);
 }
 
-/* Camp Card Styles */
 .camp-card .card-header {
+  padding: 0;
+  border: none;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
-  gap: 1rem;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
 .camp-name {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  flex: 1;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  font-size: var(--font-size-lg);
 }
 
 .occupancy-indicator {
@@ -237,62 +177,59 @@
 }
 
 .occupancy-text {
-  font-size: 0.85rem;
-  color: #a1a1a6;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
   display: block;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--spacing-xs);
 }
 
 .occupancy-bar {
-  width: 60px;
+  width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
   overflow: hidden;
-  margin-left: auto;
 }
 
 .occupancy-fill {
   height: 100%;
-  background: #3b82f6;
+  background: var(--color-primary);
   transition: width 0.3s ease;
 }
 
 .camp-details p {
-  margin: 0.5rem 0;
-  color: #e5e7eb;
-  font-size: 0.9rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  margin: var(--spacing-sm) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .card-actions {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
 }
 
-/* Donation Card Styles */
 .donation-card {
-  padding: 1rem;
+  padding: var(--spacing-lg);
 }
 
 .donation-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
-  gap: 1rem;
+  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-lg);
 }
 
 .donor-name {
-  color: #ffffff;
-  font-size: 0.95rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .donation-date {
-  color: #a1a1a6;
-  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
   white-space: nowrap;
 }
 
@@ -303,91 +240,53 @@
 }
 
 .donation-type {
-  color: #e5e7eb;
-  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .donation-amount {
-  color: #3b82f6;
-  font-weight: 600;
-  font-size: 0.9rem;
+  color: var(--color-primary-light);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
   margin: 0;
 }
 
 .show-more {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 1rem;
+  padding: var(--spacing-lg);
 }
 
 .status {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
 }
 
 .status-active {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger-light);
 }
 
 .status-resolved {
-  background: rgba(34, 197, 94, 0.2);
-  color: #86efac;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-success-light);
 }
 
 .status-monitoring {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fde047;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning-light);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  .disaster-detail {
-    padding: 1rem;
-  }
-
   .disaster-title {
-    font-size: 2rem;
+    font-size: var(--font-size-3xl);
   }
 
   .detail-list {
     grid-template-columns: 1fr;
-  }
-
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .camp-card .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .occupancy-indicator {
-    text-align: left;
-    width: 100%;
-  }
-
-  .occupancy-bar {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .donation-header {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .donation-date {
-    align-self: flex-start;
   }
 }

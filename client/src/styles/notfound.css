@@ -3,43 +3,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: var(--spacing-4xl) var(--spacing-lg);
   text-align: center;
-  color: var(--text);
+  color: var(--color-text-primary);
+}
+
+.notfound-content {
+  background: rgba(0,0,0,0.2);
+  padding: var(--spacing-3xl);
+  border-radius: var(--radius-xl);
 }
 
 .notfound h1 {
-  font-size: 72px;
-  font-weight: 700;
+  font-size: 4rem;
+  font-weight: var(--font-weight-bold);
   line-height: 1;
-  margin: 0 0 12px 0;
-  color: var(--text);
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--color-primary-light);
 }
 
 .notfound p {
-  font-size: 1rem;
-  margin: 0 0 16px 0;
-  color: var(--muted);
-}
-
-.notfound .btn {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.notfound .btn:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.06);
+  font-size: var(--font-size-lg);
+  margin: 0 0 var(--spacing-xl) 0;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 780px) {
   .notfound h1 {
-    font-size: 48px;
+    font-size: 3rem;
   }
 }

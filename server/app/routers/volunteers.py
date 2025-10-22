@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 from app.database import get_db
 from app import models, schemas
+from app.auth import get_current_active_user
 
 router = APIRouter()
 
@@ -24,6 +26,44 @@ async def get_volunteers(
     return volunteers
 
 
+# Admin-only endpoints (must come before parameterized routes)
+@router.get("/volunteers/pending", response_model=List[schemas.PendingVolunteer])
+async def get_pending_volunteers(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get all pending volunteers (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    pending_volunteers = db.query(models.Volunteer).filter(
+        models.Volunteer.status == models.VolunteerStatus.PENDING
+    ).all()
+    
+    # Add days pending calculation
+    for volunteer in pending_volunteers:
+        days_pending = (datetime.now() - volunteer.created_at).days
+        volunteer.days_pending = days_pending
+    
+    return pending_volunteers
+
+
+@router.get("/volunteers/approved", response_model=List[schemas.Volunteer])
+async def get_approved_volunteers(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get approved volunteers available for assignment"""
+    if current_user.role not in [models.UserRole.ADMIN, models.UserRole.CAMP_COORDINATOR]:
+        raise HTTPException(status_code=403, detail="Admin or Coordinator access required")
+    
+    approved_volunteers = db.query(models.Volunteer).filter(
+        models.Volunteer.status.in_([models.VolunteerStatus.APPROVED, models.VolunteerStatus.ASSIGNED])
+    ).all()
+    
+    return approved_volunteers
+
+
 @router.get("/volunteers/{volunteer_id}", response_model=schemas.Volunteer)
 async def get_volunteer(volunteer_id: int, db: Session = Depends(get_db)):
     """Get volunteer by ID"""
@@ -35,7 +75,7 @@ async def get_volunteer(volunteer_id: int, db: Session = Depends(get_db)):
 
 @router.post("/volunteers", response_model=schemas.Volunteer, status_code=status.HTTP_201_CREATED)
 async def create_volunteer(volunteer: schemas.VolunteerCreate, db: Session = Depends(get_db)):
-    """Register a new volunteer"""
+    """Register a new volunteer (starts in PENDING status)"""
     # Check if email already exists
     existing_volunteer = db.query(models.Volunteer).filter(models.Volunteer.email == volunteer.email).first()
     if existing_volunteer:
@@ -47,7 +87,11 @@ async def create_volunteer(volunteer: schemas.VolunteerCreate, db: Session = Dep
         if not disaster:
             raise HTTPException(status_code=404, detail="Disaster not found")
     
-    db_volunteer = models.Volunteer(**volunteer.dict())
+    # Create volunteer with PENDING status
+    volunteer_data = volunteer.dict()
+    volunteer_data['status'] = models.VolunteerStatus.PENDING
+    
+    db_volunteer = models.Volunteer(**volunteer_data)
     db.add(db_volunteer)
     db.commit()
     db.refresh(db_volunteer)
@@ -100,3 +144,58 @@ async def delete_volunteer(volunteer_id: int, db: Session = Depends(get_db)):
     db.delete(volunteer)
     db.commit()
     return {"message": "Volunteer deleted successfully"}
+
+
+@router.put("/volunteers/{volunteer_id}/approve", response_model=schemas.Volunteer)
+async def approve_volunteer(
+    volunteer_id: int,
+    approval: schemas.VolunteerApprovalUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Approve or reject volunteer (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    volunteer = db.query(models.Volunteer).filter(models.Volunteer.volunteer_id == volunteer_id).first()
+    if not volunteer:
+        raise HTTPException(status_code=404, detail="Volunteer not found")
+    
+    if volunteer.status != models.VolunteerStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Volunteer is not in pending status")
+    
+    # Update volunteer status
+    volunteer.status = approval.status
+    volunteer.approved_by = current_user.user_id
+    volunteer.approved_date = datetime.now()
+    
+    if approval.status == models.VolunteerStatus.REJECTED:
+        volunteer.rejection_reason = approval.rejection_reason
+    
+    db.commit()
+    db.refresh(volunteer)
+    return volunteer
+
+
+@router.get("/volunteers/{volunteer_id}/assignments", response_model=List[schemas.VolunteerAssignment])
+async def get_volunteer_assignments(
+    volunteer_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get assignments for a specific volunteer"""
+    # Check if volunteer exists
+    volunteer = db.query(models.Volunteer).filter(models.Volunteer.volunteer_id == volunteer_id).first()
+    if not volunteer:
+        raise HTTPException(status_code=404, detail="Volunteer not found")
+    
+    # Allow access if user is admin, coordinator, or the volunteer themselves (by email)
+    if (current_user.role not in [models.UserRole.ADMIN, models.UserRole.CAMP_COORDINATOR] and 
+        current_user.email != volunteer.email):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    assignments = db.query(models.VolunteerAssignment).filter(
+        models.VolunteerAssignment.volunteer_id == volunteer_id
+    ).order_by(models.VolunteerAssignment.assignment_date.desc()).all()
+    
+    return assignments

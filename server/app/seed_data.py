@@ -8,8 +8,8 @@ import random
 
 from app.database import SessionLocal
 from app.models import (
-    User, UserRole, Disaster, Camp, Donation, Volunteer, 
-    ResourceRequest, RequestStatus, VolunteerAssignment
+    User, UserRole, Disaster, Camp, CampCoordinator, Donation, Volunteer, 
+    ResourceRequest, RequestStatus, VolunteerAssignment, VolunteerStatus
 )
 
 def hash_password(password: str) -> str:
@@ -33,13 +33,62 @@ def create_demo_users(db: Session):
             "email": "coordinator@ndrf.gov.in",
             "password_hash": hash_password("coord123"),
             "full_name": "NDRF Coordinator",
-            "role": UserRole.ADMIN
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord1",
+            "email": "coord1@kerala.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Kerala Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord2",
+            "email": "coord2@uttarakhand.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Uttarakhand Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord3",
+            "email": "coord3@gujarat.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Gujarat Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord4",
+            "email": "coord4@delhi.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Delhi Camp Coordinator",
+            "role": UserRole.CAMP_COORDINATOR
+        },
+        {
+            "username": "camp_coord5",
+            "email": "coord5@kerala.gov.in",
+            "password_hash": hash_password("coord123"),
+            "full_name": "Kerala Camp Coordinator 2",
+            "role": UserRole.CAMP_COORDINATOR
         },
         {
             "username": "volunteer_user",
             "email": "volunteer@example.com",
             "password_hash": hash_password("user123"),
             "full_name": "Demo Volunteer User",
+            "role": UserRole.USER
+        },
+        {
+            "username": "dr_arjun",
+            "email": "arjun.mehta@gmail.com",
+            "password_hash": hash_password("volunteer123"),
+            "full_name": "Dr. Arjun Mehta",
+            "role": UserRole.USER
+        },
+        {
+            "username": "nurse_rekha",
+            "email": "rekha.sharma@yahoo.com",
+            "password_hash": hash_password("volunteer123"),
+            "full_name": "Nurse Rekha Sharma",
             "role": UserRole.USER
         }
     ]
@@ -231,6 +280,87 @@ def create_demo_camps(db: Session, disasters, admin_user):
     
     return created_camps
 
+def create_demo_camp_coordinators(db: Session, camps, users):
+    """Create camp coordinator assignments - one coordinator per camp"""
+    # Get coordinator users (skip admin user at index 0)
+    coordinator_users = [user for user in users[1:] if user.role == UserRole.CAMP_COORDINATOR]
+    
+    # Each coordinator gets exactly one camp - one-to-one mapping
+    coordinators_data = [
+        {
+            "user_id": coordinator_users[0].user_id,
+            "camp_id": camps[0].camp_id,  # Kochi Relief Center
+            "responsibilities": "Overall camp management, resource coordination, volunteer supervision",
+            "contact_hours": "24/7 emergency contact, office hours 9 AM - 6 PM"
+        },
+        {
+            "user_id": coordinator_users[1].user_id,
+            "camp_id": camps[1].camp_id,  # Alappuzha Emergency Camp
+            "responsibilities": "Emergency response coordination, medical team liaison",
+            "contact_hours": "Emergency calls anytime, regular hours 8 AM - 8 PM"
+        },
+        {
+            "user_id": coordinator_users[2].user_id,
+            "camp_id": camps[2].camp_id,  # Chamoli Base Camp
+            "responsibilities": "Mountain rescue coordination, equipment management, safety protocols",
+            "contact_hours": "Daylight hours 6 AM - 6 PM, emergency contact available"
+        },
+        {
+            "user_id": coordinator_users[3].user_id,
+            "camp_id": camps[3].camp_id,  # Joshimath Relief Station
+            "responsibilities": "High altitude medical coordination, supply chain management",
+            "contact_hours": "Regular hours 7 AM - 7 PM"
+        },
+        {
+            "user_id": coordinator_users[4].user_id,
+            "camp_id": camps[4].camp_id,  # Barmer Water Distribution Center
+            "responsibilities": "Water resource management, livestock care coordination",
+            "contact_hours": "Early morning and evening hours, emergency contact"
+        },
+        # Only assign remaining camps if we have enough coordinators
+        # Otherwise leave some camps without coordinators for now
+    ]
+    
+    # Add remaining camps only if we have enough coordinators
+    if len(coordinator_users) > 5:
+        coordinators_data.extend([
+            {
+                "user_id": coordinator_users[5].user_id,
+                "camp_id": camps[5].camp_id,  # Kutch Rehabilitation Center
+                "responsibilities": "Post-cyclone rehabilitation, infrastructure repair coordination",
+                "contact_hours": "Regular hours 8 AM - 6 PM"
+            }
+        ])
+    
+    if len(coordinator_users) > 6:
+        coordinators_data.extend([
+            {
+                "user_id": coordinator_users[6].user_id,
+                "camp_id": camps[6].camp_id,  # Mandvi Coastal Relief Camp
+                "responsibilities": "Coastal community support, fishing boat repairs",
+                "contact_hours": "Morning and evening hours, emergency contact"
+            }
+        ])
+    
+    if len(coordinator_users) > 7:
+        coordinators_data.extend([
+            {
+                "user_id": coordinator_users[7].user_id,
+                "camp_id": camps[7].camp_id,  # Delhi Heat Relief Center
+                "responsibilities": "Heat relief operations, medical emergency coordination",
+                "contact_hours": "Peak heat hours 10 AM - 6 PM, emergency contact"
+            }
+        ])
+    
+    created_coordinators = []
+    for coord_data in coordinators_data:
+        coordinator = CampCoordinator(**coord_data)
+        db.add(coordinator)
+        db.flush()
+        created_coordinators.append(coordinator)
+    
+    return created_coordinators
+
 def create_demo_donations(db: Session, disasters):
     """Create 25-30 sample donations (mix of monetary and supplies)"""
     
@@ -371,7 +501,7 @@ def create_demo_volunteers(db: Session, disasters):
             "address": f"Address {i+1}, Delhi, India",
             "emergency_contact": f"+91-9876502{i+1:03d}",
             "background_check": random.choice([True, False]),
-            "status": random.choice(["Active", "Available", "Assigned"]),
+            "status": VolunteerStatus.PENDING,  # All volunteers start as pending
             "disaster_id": random.choice(disasters).disaster_id if random.choice([True, False]) else None
         })
         
@@ -383,7 +513,7 @@ def create_demo_volunteers(db: Session, disasters):
     return created_volunteers
 
 
-def create_demo_resource_requests(db: Session, disasters, camps):
+def create_demo_resource_requests(db: Session, disasters, camps, coordinators):
     """Create sample resource requests"""
     
     resource_requests_data = [
@@ -395,7 +525,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "Critical",
             "disaster_id": disasters[0].disaster_id,
             "camp_id": camps[0].camp_id,
-            "requested_by": "Camp Medical Officer",
+            "requested_by_coordinator_id": coordinators[0].coordinator_id,
             "status": RequestStatus.PENDING
         },
         {
@@ -406,7 +536,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "High",
             "disaster_id": disasters[1].disaster_id,
             "camp_id": camps[2].camp_id,
-            "requested_by": "Camp Coordinator",
+            "requested_by_coordinator_id": coordinators[2].coordinator_id,
             "status": RequestStatus.APPROVED
         },
         {
@@ -417,7 +547,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "High",
             "disaster_id": disasters[2].disaster_id,
             "camp_id": camps[4].camp_id,
-            "requested_by": "Health Officer",
+            "requested_by_coordinator_id": coordinators[4].coordinator_id,
             "status": RequestStatus.FULFILLED
         },
         {
@@ -428,7 +558,7 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "Medium",
             "disaster_id": disasters[3].disaster_id,
             "camp_id": camps[5].camp_id,
-            "requested_by": "Infrastructure Team",
+            "requested_by_coordinator_id": None,  # Admin request
             "status": RequestStatus.PENDING
         },
         {
@@ -439,8 +569,19 @@ def create_demo_resource_requests(db: Session, disasters, camps):
             "priority_level": "High",
             "disaster_id": disasters[4].disaster_id,
             "camp_id": camps[7].camp_id,
-            "requested_by": "Camp Manager",
+            "requested_by_coordinator_id": coordinators[5].coordinator_id,
             "status": RequestStatus.APPROVED
+        },
+        {
+            "title": "Additional Blankets and Warm Clothing",
+            "description": "Winter supplies needed for mountain rescue operations",
+            "resource_type": "Clothing",
+            "quantity_needed": "100 blankets, 50 winter jackets, warm clothing",
+            "priority_level": "High",
+            "disaster_id": disasters[1].disaster_id,
+            "camp_id": camps[3].camp_id,
+            "requested_by_coordinator_id": coordinators[3].coordinator_id,
+            "status": RequestStatus.PENDING
         }
     ]
     
@@ -457,6 +598,25 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
     """Create sample volunteer assignments"""
     
     assignments_data = []
+    
+    # First, approve some volunteers so they can be assigned
+    volunteers_to_assign = [0, 1, 2, 4, 5, 6, 8, 9, 10, 13]  # Indices of volunteers to approve and assign
+    
+    for idx in volunteers_to_assign:
+        if idx < len(volunteers):
+            volunteer = volunteers[idx]
+            volunteer.status = VolunteerStatus.APPROVED
+            volunteer.approved_by = admin_user.user_id
+            volunteer.approved_date = datetime.now() - timedelta(days=random.randint(5, 20))
+    
+    # Also approve some additional volunteers without assignments (available for assignment)
+    additional_approved = [14, 15, 16, 17, 18, 19, 20]  # More volunteers to approve but not assign
+    for idx in additional_approved:
+        if idx < len(volunteers):
+            volunteer = volunteers[idx]
+            volunteer.status = VolunteerStatus.APPROVED
+            volunteer.approved_by = admin_user.user_id
+            volunteer.approved_date = datetime.now() - timedelta(days=random.randint(1, 15))
     
     # Assign some volunteers to specific camps with roles
     assignments = [
@@ -477,6 +637,9 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
             volunteer = volunteers[assignment["volunteer_idx"]]
             camp = camps[assignment["camp_idx"]]
             
+            # Update volunteer status to ASSIGNED
+            volunteer.status = VolunteerStatus.ASSIGNED
+            
             assignment_data = {
                 "volunteer_id": volunteer.volunteer_id,
                 "camp_id": camp.camp_id,
@@ -491,6 +654,8 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
             
             if assignment["status"] == "Completed":
                 assignment_data["end_date"] = datetime.now() - timedelta(days=random.randint(1, 5))
+                # If assignment is completed, set volunteer back to APPROVED (available for new assignment)
+                volunteer.status = VolunteerStatus.APPROVED
             
             assignments_data.append(assignment_data)
     
@@ -527,14 +692,17 @@ def seed_database():
         print("🏕️ Creating relief camps...")
         camps = create_demo_camps(db, disasters, admin_user)
         
-        print("💰 Creating donations...")
+        print("�‍💼 Crenating camp coordinators...")
+        coordinators = create_demo_camp_coordinators(db, camps, users)
+        
+        print("� CCreating donations...")
         donations = create_demo_donations(db, disasters)
         
-        print("🙋 Creating volunteers...")
+        print("� Creatinng volunteers...")
         volunteers = create_demo_volunteers(db, disasters)
         
         print("📋 Creating resource requests...")
-        resource_requests = create_demo_resource_requests(db, disasters, camps)
+        resource_requests = create_demo_resource_requests(db, disasters, camps, coordinators)
         
         print("👥 Creating volunteer assignments...")
         volunteer_assignments = create_demo_volunteer_assignments(db, volunteers, camps, disasters, admin_user)
@@ -544,9 +712,10 @@ def seed_database():
         
         print("✅ Database seeding completed successfully!")
         print(f"Created:")
-        print(f"  - {len(users)} users (including admin)")
+        print(f"  - {len(users)} users (including admin and coordinators)")
         print(f"  - {len(disasters)} disasters")
         print(f"  - {len(camps)} relief camps")
+        print(f"  - {len(coordinators)} camp coordinators")
         print(f"  - {len(donations)} donations")
         print(f"  - {len(volunteers)} volunteers")
         print(f"  - {len(resource_requests)} resource requests")

@@ -1,1 +1,28 @@
-@import './login.css';
+
+.donation-form-container {
+    max-width: 768px;
+    margin: var(--spacing-3xl) auto;
+    padding: var(--spacing-2xl);
+    background: rgba(17, 24, 39, 0.75);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    color: var(--color-text-primary);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+}
+
+.donation-form-container h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.donation-form-container .text-muted {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.donation-form-container .form {
+    margin-top: var(--spacing-xl);
+}

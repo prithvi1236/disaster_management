@@ -1,159 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { fetchDisaster, fetchCamps, fetchDonations } from '../services/api.js';
 import '../styles/disasterDetail.css';
 
-// Mock data for demo purposes
-const mockData = {
-  disasters: {
-    1: {
-      disaster_id: 1,
-      name: "Hurricane Maria",
-      type: "Hurricane",
-      location: "Miami-Dade County, Florida",
-      severity_level: "High",
-      status: "Active",
-      start_date: "2024-09-15",
-      description: "Category 4 hurricane causing widespread flooding and power outages across South Florida. Emergency services are working around the clock to provide assistance to affected communities."
-    },
-    2: {
-      disaster_id: 2,
-      name: "Wildfire Emergency",
-      type: "Wildfire",
-      location: "Riverside County, California",
-      severity_level: "Medium",
-      status: "Monitoring",
-      start_date: "2024-09-20",
-      description: "Fast-moving wildfire threatening residential areas and forcing evacuations. Firefighters are working to contain the blaze with aerial support."
-    }
-  },
-  camps: {
-    1: [
-      {
-        camp_id: 101,
-        name: "Miami Central Relief Center",
-        location: "Downtown Miami Convention Center",
-        capacity: 500,
-        occupancy: 342,
-        contact_info: "(305) 555-0123",
-        facilities: "Medical care, food service, temporary housing"
-      },
-      {
-        camp_id: 102,
-        name: "Homestead Emergency Shelter",
-        location: "Homestead High School",
-        capacity: 300,
-        occupancy: 187,
-        contact_info: "(305) 555-0124",
-        facilities: "Basic shelter, meals, family services"
-      },
-      {
-        camp_id: 103,
-        name: "Coral Gables Community Center",
-        location: "Coral Gables Recreation Center",
-        capacity: 200,
-        occupancy: 156,
-        contact_info: "(305) 555-0125",
-        facilities: "Pet-friendly shelter, medical station"
-      }
-    ],
-    2: [
-      {
-        camp_id: 201,
-        name: "Riverside Evacuation Center",
-        location: "Riverside Community College",
-        capacity: 400,
-        occupancy: 278,
-        contact_info: "(951) 555-0201",
-        facilities: "Emergency housing, medical care, pet shelter"
-      },
-      {
-        camp_id: 202,
-        name: "Moreno Valley Relief Station",
-        location: "Moreno Valley Civic Center",
-        capacity: 250,
-        occupancy: 134,
-        contact_info: "(951) 555-0202",
-        facilities: "Temporary housing, food distribution"
-      }
-    ]
-  },
-  donations: {
-    1: [
-      {
-        donation_id: 1001,
-        donor_name: "Sarah Johnson",
-        donation_type: "Monetary",
-        amount: "$5,000",
-        donation_date: "2024-09-16"
-      },
-      {
-        donation_id: 1002,
-        donor_name: "Miami Food Bank",
-        donation_type: "Food Supplies",
-        quantity: "2,000 meals",
-        donation_date: "2024-09-16"
-      },
-      {
-        donation_id: 1003,
-        donor_name: "Anonymous",
-        donation_type: "Medical Supplies",
-        quantity: "First aid kits, medications",
-        donation_date: "2024-09-17"
-      },
-      {
-        donation_id: 1004,
-        donor_name: "Local Business Coalition",
-        donation_type: "Monetary",
-        amount: "$15,000",
-        donation_date: "2024-09-17"
-      },
-      {
-        donation_id: 1005,
-        donor_name: "Red Cross Florida",
-        donation_type: "Emergency Supplies",
-        quantity: "Blankets, water, hygiene kits",
-        donation_date: "2024-09-18"
-      },
-      {
-        donation_id: 1006,
-        donor_name: "Maria Rodriguez",
-        donation_type: "Monetary",
-        amount: "$2,500",
-        donation_date: "2024-09-18"
-      }
-    ],
-    2: [
-      {
-        donation_id: 2001,
-        donor_name: "California Fire Foundation",
-        donation_type: "Monetary",
-        amount: "$10,000",
-        donation_date: "2024-09-21"
-      },
-      {
-        donation_id: 2002,
-        donor_name: "Riverside Community",
-        donation_type: "Clothing",
-        quantity: "500 clothing items",
-        donation_date: "2024-09-21"
-      },
-      {
-        donation_id: 2003,
-        donor_name: "Anonymous",
-        donation_type: "Monetary",
-        amount: "$3,000",
-        donation_date: "2024-09-22"
-      },
-      {
-        donation_id: 2004,
-        donor_name: "Local Grocery Stores",
-        donation_type: "Food Supplies",
-        quantity: "1,200 meals",
-        donation_date: "2024-09-22"
-      }
-    ]
-  }
-};
+
 
 export default function DisasterDetail() {
   const { id } = useParams();
@@ -164,30 +14,41 @@ export default function DisasterDetail() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadDisasterData = () => {
+    loadDisasterData();
+  }, [id]);
+
+  const loadDisasterData = async () => {
+    try {
       setLoading(true);
       setError('');
       
-      // Simulate API loading
-      setTimeout(() => {
-        const disasterId = parseInt(id);
-        const disasterData = mockData.disasters[disasterId];
-        
-        if (!disasterData) {
-          setError('Disaster not found');
-          setLoading(false);
-          return;
-        }
-        
-        setDisaster(disasterData);
-        setCamps(mockData.camps[disasterId] || []);
-        setDonations(mockData.donations[disasterId] || []);
-        setLoading(false);
-      }, 600);
-    };
-
-    loadDisasterData();
-  }, [id]);
+      const disasterId = parseInt(id);
+      
+      // Load disaster details
+      const disasterData = await fetchDisaster(disasterId);
+      setDisaster(disasterData);
+      
+      // Load camps for this disaster
+      const campsData = await fetchCamps(disasterId);
+      setCamps(campsData);
+      
+      // Load donations for this disaster
+      try {
+        const donationsData = await fetchDonations();
+        const disasterDonations = donationsData.filter(d => d.disaster_id === disasterId);
+        setDonations(disasterDonations);
+      } catch (err) {
+        // Donations might not be available, continue without them
+        console.warn('Could not load donations:', err);
+        setDonations([]);
+      }
+      
+    } catch (err) {
+      setError(err.message || 'Failed to load disaster details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -368,7 +229,7 @@ export default function DisasterDetail() {
                   <div className="donation-details">
                     <p className="donation-type">{donation.donation_type}</p>
                     <p className="donation-amount">
-                      {donation.amount ? `$${donation.amount}` : donation.quantity}
+                      {donation.amount ? `₹${donation.amount.toLocaleString()}` : donation.quantity}
                     </p>
                   </div>
                 </div>
