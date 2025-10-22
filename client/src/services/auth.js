@@ -38,9 +38,6 @@ export async function login(credentials) {
     const user = await apiGetCurrentUser();
     setCurrentUser(user);
     
-    // Dispatch custom event to notify components of auth state change
-    window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { user, authenticated: true } }));
-    
     return { success: true, user };
   } catch (error) {
     return { success: false, error: error.message };
@@ -65,10 +62,6 @@ export async function signup(userData) {
 
 export function logout() {
   removeToken();
-  
-  // Dispatch custom event to notify components of auth state change
-  window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { user: null, authenticated: false } }));
-  
   window.location.href = '/';
 }
 
@@ -79,18 +72,10 @@ export async function initializeAuth() {
     try {
       const user = await apiGetCurrentUser();
       setCurrentUser(user);
-      
-      // Dispatch custom event to notify components of auth state
-      window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { user, authenticated: true } }));
-      
       return user;
     } catch (error) {
       // Token is invalid, clear it
       removeToken();
-      
-      // Dispatch custom event to notify components of auth state change
-      window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { user: null, authenticated: false } }));
-      
       return null;
     }
   }

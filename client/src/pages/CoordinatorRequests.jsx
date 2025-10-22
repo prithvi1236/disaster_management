@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getCurrentUser, logout } from '../services/auth.js';
+import { getCurrentUser } from '../services/auth.js';
 import { getCoordinatorRequests, createResourceRequest } from '../services/api.js';
 import '../styles/globals.css';
 
@@ -66,10 +66,6 @@ export default function CoordinatorRequests() {
     } catch (err) {
       setError('Failed to create resource request');
     }
-  };
-
-  const handleLogout = () => {
-    logout();
   };
 
   const getStatusBadgeClass = (status) => {
@@ -325,15 +321,6 @@ export default function CoordinatorRequests() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Bottom logout section */}
-      <div className="dashboard-logout-section">
-        <p>Ready to sign out?</p>
-        <button className="btn btn-outline btn-lg" onClick={handleLogout}>
-          <span style={{ marginRight: 'var(--spacing-sm)' }}>👋</span>
-          Logout
-        </button>
       </div>
     </div>
   );

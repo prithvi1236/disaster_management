@@ -62,13 +62,6 @@ export async function fetchCamp(id) {
   return request(`/camps/${id}`, { method: 'GET' });
 }
 
-export async function updateCamp(campId, campData) {
-  return request(`/camps/${campId}`, {
-    method: 'PUT',
-    body: JSON.stringify(campData)
-  });
-}
-
 // Volunteers
 export async function postVolunteer(volunteer) {
   return request('/volunteers', {
