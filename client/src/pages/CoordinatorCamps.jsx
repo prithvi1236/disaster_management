@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getCurrentUser } from '../services/auth.js';
-import { getCoordinatorCamps } from '../services/api.js';
+import { getCurrentUser, logout } from '../services/auth.js';
+import { getCoordinatorCamps, updateCamp } from '../services/api.js';
 import '../styles/globals.css';
 
 export default function CoordinatorCamps() {
@@ -9,6 +9,11 @@ export default function CoordinatorCamps() {
   const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedCamp, setSelectedCamp] = useState(null);
+  const [newOccupancy, setNewOccupancy] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -46,6 +51,90 @@ export default function CoordinatorCamps() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
+  const handleUpdateOccupancy = (camp) => {
+    setSelectedCamp(camp);
+    setNewOccupancy(camp.occupancy || 0);
+    setShowUpdateModal(true);
+  };
+
+  const handleSubmitOccupancy = async (e) => {
+    e.preventDefault();
+    if (!selectedCamp || updating) return;
+
+    setUpdating(true);
+    setError('');
+
+    try {
+      const occupancyValue = parseInt(newOccupancy);
+      
+      // Validate occupancy
+      if (isNaN(occupancyValue)) {
+        setError('Please enter a valid number');
+        return;
+      }
+      
+      if (occupancyValue < 0) {
+        setError('Occupancy cannot be negative');
+        return;
+      }
+      
+      if (occupancyValue > selectedCamp.capacity) {
+        setError(`Occupancy cannot exceed capacity (${selectedCamp.capacity})`);
+        return;
+      }
+
+      // Check if the value is actually different
+      if (occupancyValue === selectedCamp.occupancy) {
+        setError('New occupancy is the same as current occupancy');
+        return;
+      }
+
+      // Update camp occupancy
+      await updateCamp(selectedCamp.camp_id, { occupancy: occupancyValue });
+      
+      // Update local state immediately for better UX
+      setCamps(prevCamps => 
+        prevCamps.map(camp => 
+          camp.camp_id === selectedCamp.camp_id 
+            ? { ...camp, occupancy: occupancyValue }
+            : camp
+        )
+      );
+      
+      // Close modal and reset state
+      setShowUpdateModal(false);
+      setSelectedCamp(null);
+      setNewOccupancy('');
+      setError('');
+      setSuccess(`Occupancy updated successfully to ${occupancyValue} people`);
+      
+    } catch (err) {
+      console.error('Error updating occupancy:', err);
+      setError('Failed to update occupancy. Please try again.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowUpdateModal(false);
+    setSelectedCamp(null);
+    setNewOccupancy('');
+    setError('');
+  };
+
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const getOccupancyPercentage = (occupancy, capacity) => {
     if (!capacity) return 0;
     return Math.round((occupancy / capacity) * 100);
@@ -82,6 +171,12 @@ export default function CoordinatorCamps() {
       {error && (
         <div className="alert alert-danger">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="alert alert-success">
+          {success}
         </div>
       )}
 
@@ -209,7 +304,10 @@ export default function CoordinatorCamps() {
                   )}
 
                   <div className="flex gap-lg">
-                    <button className="btn btn-secondary">
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => handleUpdateOccupancy(camp)}
+                    >
                       Update Occupancy
                     </button>
                     <Link to="/coordinator/requests" className="btn btn-warning">
@@ -221,6 +319,102 @@ export default function CoordinatorCamps() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Update Occupancy Modal */}
+      {showUpdateModal && selectedCamp && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Update Occupancy - {selectedCamp.name}</h3>
+              <button 
+                onClick={handleCloseModal}
+                className="btn btn-secondary"
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitOccupancy}>
+              <div className="mb-lg">
+                <div className="grid grid-cols-3 gap-lg mb-lg">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-primary">{selectedCamp.occupancy || 0}</p>
+                    <p className="text-sm text-muted">Current Occupancy</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-secondary">{selectedCamp.capacity || 0}</p>
+                    <p className="text-sm text-muted">Total Capacity</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-success">{(selectedCamp.capacity || 0) - (selectedCamp.occupancy || 0)}</p>
+                    <p className="text-sm text-muted">Available Spaces</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">New Occupancy Count</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={newOccupancy}
+                  onChange={(e) => setNewOccupancy(e.target.value)}
+                  min="0"
+                  max={selectedCamp.capacity}
+                  required
+                  placeholder="Enter new occupancy count"
+                />
+                <div className="flex justify-between items-center mt-sm">
+                  <p className="text-sm text-muted">
+                    Maximum capacity: {selectedCamp.capacity} people
+                  </p>
+                  {newOccupancy && !isNaN(parseInt(newOccupancy)) && (
+                    <p className="text-sm text-primary">
+                      New occupancy rate: {Math.round((parseInt(newOccupancy) / selectedCamp.capacity) * 100)}%
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {error && (
+                <div className="alert alert-danger">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-lg">
+                <button type="submit" className="btn btn-primary" disabled={updating}>
+                  {updating ? (
+                    <>
+                      <span className="spinner" style={{ marginRight: 'var(--spacing-sm)' }}></span>
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Occupancy'
+                  )}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={handleCloseModal}
+                  className="btn btn-secondary"
+                  disabled={updating}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom logout section */}
+      <div className="dashboard-logout-section">
+        <p>Ready to sign out?</p>
+        <button className="btn btn-outline btn-lg" onClick={handleLogout}>
+          <span style={{ marginRight: 'var(--spacing-sm)' }}>👋</span>
+          Logout
+        </button>
       </div>
     </div>
   );

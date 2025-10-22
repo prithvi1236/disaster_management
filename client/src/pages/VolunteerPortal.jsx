@@ -257,7 +257,7 @@ export default function VolunteerPortal() {
       </div>
 
       {/* Quick Actions */}
-      <div>
+      <div className="mb-2xl">
         <h3 className="mb-lg">Quick Actions</h3>
         <div className="grid grid-cols-2 gap-lg">
           <Link to="/disasters" className="btn btn-primary">
@@ -280,6 +280,15 @@ export default function VolunteerPortal() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Bottom logout section */}
+      <div className="dashboard-logout-section">
+        <p>Ready to sign out?</p>
+        <button className="btn btn-outline btn-lg" onClick={handleLogout}>
+          <span style={{ marginRight: 'var(--spacing-sm)' }}>👋</span>
+          Logout
+        </button>
       </div>
     </div>
   );

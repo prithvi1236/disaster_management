@@ -1,17 +1,42 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { isAuthenticated, getCurrentUser, logout } from "../services/auth.js";
 import "../styles/header.css";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      setUser(getCurrentUser());
-    }
-  }, []);
+    // Check authentication state on mount and route changes
+    const checkAuthState = () => {
+      if (isAuthenticated()) {
+        setUser(getCurrentUser());
+      } else {
+        setUser(null);
+      }
+    };
+
+    checkAuthState();
+
+    // Listen for authentication state changes
+    const handleAuthStateChange = (event) => {
+      const { user: newUser, authenticated } = event.detail;
+      if (authenticated) {
+        setUser(newUser);
+      } else {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("authStateChanged", handleAuthStateChange);
+
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener("authStateChanged", handleAuthStateChange);
+    };
+  }, [location]); // Re-run when location changes
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
   const closeMenu = () => setMenuOpen(false);
@@ -43,15 +68,15 @@ export default function Header() {
 
     // Role-specific links
     let roleLinks = [];
-    
-    if (user.role === 'admin') {
+
+    if (user.role === "admin") {
       roleLinks = [
         { path: "/disasters", label: "Disasters" },
         { path: "/admin/volunteers", label: "Manage Volunteers" },
         { path: "/admin/requests", label: "Approve Requests" },
         { path: "/admin/disasters", label: "Manage Disasters" },
       ];
-    } else if (user.role === 'camp_coordinator') {
+    } else if (user.role === "camp_coordinator") {
       roleLinks = [
         { path: "/disasters", label: "Disasters" },
         { path: "/coordinator/volunteers", label: "Volunteers" },
@@ -69,9 +94,7 @@ export default function Header() {
     }
 
     // Auth links
-    const authLinks = [
-      { action: handleLogout, label: "Logout" },
-    ];
+    const authLinks = [{ action: handleLogout, label: "Logout" }];
 
     return [...commonLinks, ...roleLinks, ...authLinks];
   };
@@ -90,17 +113,15 @@ export default function Header() {
 
         {/* Navigation */}
         <nav className={`header-nav ${menuOpen ? "header-nav--open" : ""}`}>
-          {user && (
-            <span className="user-greeting">
-              Hi, {user.full_name}
-            </span>
-          )}
-          {navLinks.map(({ path, label, primary, action }, index) => (
+          {user && <span className="user-greeting">Hi, {user.full_name}</span>}
+          {navLinks.map(({ path, label, primary, action }, index) =>
             action ? (
               <button
                 key={index}
                 onClick={action}
-                className={`nav-link nav-button${primary ? " nav-link--primary" : ""}`}
+                className={`nav-link nav-button${
+                  primary ? " nav-link--primary" : ""
+                }`}
               >
                 {label}
               </button>
@@ -114,7 +135,7 @@ export default function Header() {
                 {label}
               </Link>
             )
-          ))}
+          )}
         </nav>
 
         {/* Mobile menu toggle */}

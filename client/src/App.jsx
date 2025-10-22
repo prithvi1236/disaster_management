@@ -1,8 +1,10 @@
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { initializeAuth } from "./services/auth.js";
 
 import Landing from "./pages/Landing.jsx";
 import Login from "./pages/Login.jsx";
@@ -24,6 +26,11 @@ import CoordinatorRequests from "./pages/CoordinatorRequests.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
+  useEffect(() => {
+    // Initialize authentication state when app loads
+    initializeAuth();
+  }, []);
+
   return (
     <div className="app-root">
       <Header />
