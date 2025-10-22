@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { initializeAuth } from "./services/auth.js";
 
 import Landing from "./pages/Landing.jsx";
 import Login from "./pages/Login.jsx";
