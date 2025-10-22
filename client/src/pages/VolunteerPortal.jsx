@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser } from '../services/auth.js';
-import { fetchVolunteers } from '../services/api.js';
+import { fetchVolunteers, fetchVolunteerAssignments } from '../services/api.js';
 import '../styles/volunteerPortal.css';
 
 export default function VolunteerPortal() {
@@ -25,8 +25,16 @@ export default function VolunteerPortal() {
         const profile = volunteers.find(v => v.email === currentUser.email);
         setVolunteerProfile(profile);
         
-        // In a real app, you'd fetch assignments for this volunteer
-        setAssignments([]);
+        // Fetch assignments if profile exists
+        if (profile) {
+          try {
+            const volunteerAssignments = await fetchVolunteerAssignments(profile.volunteer_id);
+            setAssignments(volunteerAssignments);
+          } catch (assignmentError) {
+            console.warn('Could not load assignments:', assignmentError);
+            setAssignments([]);
+          }
+        }
       }
     } catch (err) {
       setError('Failed to load volunteer data');
@@ -102,27 +110,94 @@ export default function VolunteerPortal() {
         </section>
 
         <section className="assignments-section">
-          <h3>Your Assignments</h3>
+          <h3>Your Volunteer History</h3>
           {assignments.length === 0 ? (
             <div className="no-assignments">
-              <p>You don't have any active assignments yet.</p>
-              <p>Check back later or contact your coordinator for more information.</p>
+              <p>You don't have any assignments yet.</p>
+              {volunteerProfile?.status === 'PENDING' && (
+                <p>Once your volunteer application is approved, you'll be able to receive assignments.</p>
+              )}
+              {volunteerProfile?.status === 'APPROVED' && (
+                <p>You're approved! Check back later or contact coordinators for assignment opportunities.</p>
+              )}
             </div>
           ) : (
-            <div className="assignments-list">
-              {assignments.map((assignment, index) => (
-                <div key={index} className="assignment-card">
-                  <h4>{assignment.role}</h4>
-                  <p><strong>Camp:</strong> {assignment.camp_name}</p>
-                  <p><strong>Location:</strong> {assignment.location}</p>
-                  <p><strong>Start Date:</strong> {new Date(assignment.start_date).toLocaleDateString()}</p>
-                  <p><strong>Status:</strong> 
-                    <span className={`status ${assignment.status?.toLowerCase()}`}>
-                      {assignment.status}
-                    </span>
-                  </p>
+            <div className="assignments-container">
+              {/* Current/Active Assignments */}
+              {assignments.filter(a => a.status === 'Active').length > 0 && (
+                <div className="assignments-group">
+                  <h4>Current Assignments</h4>
+                  <div className="assignments-list">
+                    {assignments.filter(a => a.status === 'Active').map((assignment) => (
+                      <div key={assignment.assignment_id} className="assignment-card current">
+                        <div className="assignment-header">
+                          <h5>{assignment.role || 'Volunteer Role'}</h5>
+                          <span className="status active">Active</span>
+                        </div>
+                        <div className="assignment-details">
+                          <p><strong>Assignment ID:</strong> #{assignment.assignment_id}</p>
+                          <p><strong>Camp ID:</strong> {assignment.camp_id}</p>
+                          <p><strong>Started:</strong> {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Not specified'}</p>
+                          <p><strong>Assigned:</strong> {new Date(assignment.assignment_date).toLocaleDateString()}</p>
+                          {assignment.notes && (
+                            <p><strong>Notes:</strong> {assignment.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* Past Assignments */}
+              {assignments.filter(a => a.status !== 'Active').length > 0 && (
+                <div className="assignments-group">
+                  <h4>Past Assignments</h4>
+                  <div className="assignments-list">
+                    {assignments.filter(a => a.status !== 'Active').map((assignment) => (
+                      <div key={assignment.assignment_id} className="assignment-card past">
+                        <div className="assignment-header">
+                          <h5>{assignment.role || 'Volunteer Role'}</h5>
+                          <span className={`status ${assignment.status?.toLowerCase()}`}>
+                            {assignment.status}
+                          </span>
+                        </div>
+                        <div className="assignment-details">
+                          <p><strong>Assignment ID:</strong> #{assignment.assignment_id}</p>
+                          <p><strong>Camp ID:</strong> {assignment.camp_id}</p>
+                          <p><strong>Duration:</strong> 
+                            {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Not specified'}
+                            {assignment.end_date && ` - ${new Date(assignment.end_date).toLocaleDateString()}`}
+                          </p>
+                          <p><strong>Assigned:</strong> {new Date(assignment.assignment_date).toLocaleDateString()}</p>
+                          {assignment.notes && (
+                            <p><strong>Notes:</strong> {assignment.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Summary Stats */}
+              <div className="volunteer-stats">
+                <h4>Your Impact</h4>
+                <div className="stats-grid">
+                  <div className="stat-item">
+                    <span className="stat-number">{assignments.length}</span>
+                    <span className="stat-label">Total Assignments</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{assignments.filter(a => a.status === 'Active').length}</span>
+                    <span className="stat-label">Currently Active</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{assignments.filter(a => a.status === 'Completed').length}</span>
+                    <span className="stat-label">Completed</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </section>

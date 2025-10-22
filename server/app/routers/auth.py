@@ -33,8 +33,19 @@ async def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_d
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/auth/signup", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-async def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """Register new user"""
+async def signup(
+    user: schemas.UserCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Register new user (Admin only - for creating staff accounts)"""
+    # Only admins can create new user accounts
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Only administrators can create user accounts. Normal users should apply as volunteers instead."
+        )
+    
     # Check if username already exists
     existing_user = db.query(models.User).filter(models.User.username == user.username).first()
     if existing_user:

@@ -175,3 +175,27 @@ async def approve_volunteer(
     db.commit()
     db.refresh(volunteer)
     return volunteer
+
+
+@router.get("/volunteers/{volunteer_id}/assignments", response_model=List[schemas.VolunteerAssignment])
+async def get_volunteer_assignments(
+    volunteer_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get assignments for a specific volunteer"""
+    # Check if volunteer exists
+    volunteer = db.query(models.Volunteer).filter(models.Volunteer.volunteer_id == volunteer_id).first()
+    if not volunteer:
+        raise HTTPException(status_code=404, detail="Volunteer not found")
+    
+    # Allow access if user is admin, coordinator, or the volunteer themselves (by email)
+    if (current_user.role not in [models.UserRole.ADMIN, models.UserRole.CAMP_COORDINATOR] and 
+        current_user.email != volunteer.email):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    assignments = db.query(models.VolunteerAssignment).filter(
+        models.VolunteerAssignment.volunteer_id == volunteer_id
+    ).order_by(models.VolunteerAssignment.assignment_date.desc()).all()
+    
+    return assignments

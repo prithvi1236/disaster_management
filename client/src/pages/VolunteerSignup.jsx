@@ -65,103 +65,131 @@ export default function VolunteerSignup() {
   };
 
   return (
-    <div className="form-container">
-      <h2>Volunteer Signup</h2>
-      <form className="form" onSubmit={handleSubmit}>
-        <label>
-          Full Name *
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="Enter your full name"
-          />
-        </label>
+    <div className="container container-md">
+      <div className="card" style={{ marginTop: 'var(--spacing-4xl)', marginBottom: 'var(--spacing-4xl)' }}>
+        <div className="text-center mb-xl">
+          <h2 className="mb-sm">Volunteer Application</h2>
+          <div className="alert alert-info">
+            Apply to become a volunteer - no account needed! Once approved by administrators, 
+            you'll receive login credentials to access the volunteer portal.
+          </div>
+        </div>
 
-        <label>
-          Email *
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="Enter your email address"
-          />
-        </label>
+        <form className="form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Full Name *</label>
+            <input
+              type="text"
+              className="form-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Enter your full name"
+            />
+          </div>
 
-        <label>
-          Phone *
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            placeholder="Enter your phone number"
-          />
-        </label>
+          <div className="form-group">
+            <label className="form-label">Email *</label>
+            <input
+              type="email"
+              className="form-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email address"
+            />
+          </div>
 
-        <label>
-          Address
-          <textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Enter your address"
-            rows="3"
-          />
-        </label>
+          <div className="form-group">
+            <label className="form-label">Phone *</label>
+            <input
+              type="tel"
+              className="form-input"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              placeholder="Enter your phone number"
+            />
+          </div>
 
-        <label>
-          Skills & Experience
-          <textarea
-            value={skills}
-            onChange={(e) => setSkills(e.target.value)}
-            placeholder="Describe your skills (e.g., Medical, Engineering, Cooking, etc.)"
-            rows="3"
-          />
-        </label>
+          <div className="form-group">
+            <label className="form-label">Address</label>
+            <textarea
+              className="form-textarea"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Enter your address"
+              rows="3"
+            />
+          </div>
 
-        <label>
-          Availability
-          <input
-            type="text"
-            value={availability}
-            onChange={(e) => setAvailability(e.target.value)}
-            placeholder="When are you available? (e.g., Weekends, Evenings, Full-time)"
-          />
-        </label>
+          <div className="form-group">
+            <label className="form-label">Skills & Experience</label>
+            <textarea
+              className="form-textarea"
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+              placeholder="Describe your skills (e.g., Medical, Engineering, Cooking, etc.)"
+              rows="3"
+            />
+          </div>
 
-        <label>
-          Emergency Contact
-          <input
-            type="text"
-            value={emergencyContact}
-            onChange={(e) => setEmergencyContact(e.target.value)}
-            placeholder="Emergency contact name and phone"
-          />
-        </label>
+          <div className="form-group">
+            <label className="form-label">Availability</label>
+            <input
+              type="text"
+              className="form-input"
+              value={availability}
+              onChange={(e) => setAvailability(e.target.value)}
+              placeholder="When are you available? (e.g., Weekends, Evenings, Full-time)"
+            />
+          </div>
 
-        <label>
-          Disaster to Help With (Optional)
-          <select
-            value={disasterId}
-            onChange={(e) => setDisasterId(e.target.value)}
-          >
-            <option value="">Select a disaster (optional)</option>
-            {disasters.map(disaster => (
-              <option key={disaster.disaster_id} value={disaster.disaster_id}>
-                {disaster.name} - {disaster.location}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className="form-group">
+            <label className="form-label">Emergency Contact</label>
+            <input
+              type="text"
+              className="form-input"
+              value={emergencyContact}
+              onChange={(e) => setEmergencyContact(e.target.value)}
+              placeholder="Emergency contact name and phone"
+            />
+          </div>
 
-        <button type="submit" className="btn" disabled={loading}>
-          {loading ? 'Registering...' : 'Register as Volunteer'}
-        </button>
-      </form>
+          <div className="form-group">
+            <label className="form-label">Disaster to Help With (Optional)</label>
+            <select
+              className="form-select"
+              value={disasterId}
+              onChange={(e) => setDisasterId(e.target.value)}
+            >
+              <option value="">Select a disaster (optional)</option>
+              {disasters.map(disaster => (
+                <option key={disaster.disaster_id} value={disaster.disaster_id}>
+                  {disaster.name} - {disaster.location}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      {message && <p className="info">{message}</p>}
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
+            {loading ? (
+              <>
+                <span className="spinner" style={{ marginRight: 'var(--spacing-sm)' }}></span>
+                Registering...
+              </>
+            ) : (
+              'Register as Volunteer'
+            )}
+          </button>
+        </form>
+
+        {message && (
+          <div className="alert alert-success">
+            {message}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

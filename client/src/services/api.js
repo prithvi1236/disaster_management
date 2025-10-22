@@ -111,6 +111,11 @@ export async function createResourceRequest(request) {
   });
 }
 
+// Volunteer Assignments
+export async function fetchVolunteerAssignments(volunteerId) {
+  return request(`/volunteers/${volunteerId}/assignments`, { method: 'GET' });
+}
+
 // Admin-specific APIs
 export async function fetchPendingVolunteers() {
   return request('/volunteers/pending', { method: 'GET' });

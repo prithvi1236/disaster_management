@@ -22,23 +22,61 @@ export default function Header() {
     closeMenu();
   };
 
-  const publicLinks = [
-    { path: "/", label: "Home" },
-    { path: "/disasters", label: "Disasters" },
-    { path: "/volunteer-signup", label: "Volunteer" },
-    { path: "/donate", label: "Donate" },
-  ];
+  // Role-based navigation
+  const getNavigationLinks = () => {
+    if (!user) {
+      // Public/unauthenticated users - no signup needed for normal users
+      return [
+        { path: "/", label: "Home" },
+        { path: "/disasters", label: "Disasters" },
+        { path: "/volunteer-signup", label: "Volunteer" },
+        { path: "/donate", label: "Donate" },
+        { path: "/login", label: "Staff Login" },
+      ];
+    }
 
-  const authLinks = user ? [
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/volunteer-portal", label: "Volunteer Portal" },
-    { action: handleLogout, label: "Logout" },
-  ] : [
-    { path: "/login", label: "Login" },
-    { path: "/signup", label: "Sign Up", primary: true },
-  ];
+    // Common links for all authenticated users
+    const commonLinks = [
+      { path: "/", label: "Home" },
+      { path: "/dashboard", label: "Dashboard" },
+    ];
 
-  const navLinks = [...publicLinks, ...authLinks];
+    // Role-specific links
+    let roleLinks = [];
+    
+    if (user.role === 'admin') {
+      roleLinks = [
+        { path: "/disasters", label: "Disasters" },
+        { path: "/admin/volunteers", label: "Manage Volunteers" },
+        { path: "/admin/requests", label: "Approve Requests" },
+        { path: "/admin/disasters", label: "Manage Disasters" },
+      ];
+    } else if (user.role === 'camp_coordinator') {
+      roleLinks = [
+        { path: "/disasters", label: "Disasters" },
+        { path: "/coordinator/volunteers", label: "Volunteers" },
+        { path: "/coordinator/camps", label: "My Camps" },
+        { path: "/coordinator/requests", label: "My Requests" },
+      ];
+    } else {
+      // Regular user/volunteer
+      roleLinks = [
+        { path: "/disasters", label: "Disasters" },
+        { path: "/volunteer-portal", label: "Volunteer Portal" },
+        { path: "/volunteer-signup", label: "Register" },
+        { path: "/donate", label: "Donate" },
+      ];
+    }
+
+    // Auth links
+    const authLinks = [
+      { action: handleLogout, label: "Logout" },
+    ];
+
+    return [...commonLinks, ...roleLinks, ...authLinks];
+  };
+
+  const navLinks = getNavigationLinks();
 
   return (
     <header className="header">

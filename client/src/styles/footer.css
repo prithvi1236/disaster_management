@@ -1,126 +1,124 @@
+
 .footer {
-  background: rgba(20, 20, 20, 0.65);
-  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-border);
   margin-top: auto;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: #d1d5db;
+  color: var(--color-text-secondary);
+  padding: var(--spacing-3xl) 0;
 }
 
-/* Container */
 .footer-container {
-  max-width: 1024px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 22px;
-  box-sizing: border-box;
+  padding: 0 var(--spacing-lg);
   display: flex;
   flex-wrap: wrap;
-  gap: 60px;
-  align-items: flex-start;
+  gap: var(--spacing-2xl);
+  justify-content: space-between;
 }
 
-/* Brand Section */
 .footer-brand {
   flex: 1;
-  min-width: 280px;
-}
-.footer-brand h3 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0 0 8px;
-}
-.footer-brand p {
-  font-size: 14px;
-  color: #9ca3af;
-  margin: 0;
-  line-height: 1.4;
+  min-width: 250px;
 }
 
-/* Links Section */
+.footer-brand h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.footer-brand p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: var(--line-height-normal);
+}
+
+.footer-user-info {
+  font-size: var(--font-size-xs) !important;
+  color: var(--color-primary-light) !important;
+  margin-top: var(--spacing-md) !important;
+  font-weight: var(--font-weight-medium);
+}
+
 .footer-links {
   display: flex;
-  gap: 60px;
+  gap: var(--spacing-3xl);
   flex-wrap: wrap;
 }
+
 .footer-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 120px;
-}
-.footer-section h4 {
-  font-size: 12px;
-  font-weight: 600;
-  color: #f5f5f7;
-  margin: 0 0 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-.footer-section a {
-  font-size: 13px;
-  color: #a1a1a6;
-  text-decoration: none;
-  line-height: 1.4;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-.footer-section a:hover,
-.footer-section a:focus {
-  color: #4c8df6;
-  transform: translateY(-1px);
-  outline: none;
-}
-.footer-section a:visited {
-  color: #a1a1a6;
+  gap: var(--spacing-md);
 }
 
-/* Footer Bottom */
-.footer-bottom {
-  background: rgba(20, 20, 20, 0.65);
-  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
-  padding: 16px 0;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+.footer-section h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
+
+.footer-section a {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer-section a:hover,
+.footer-section a:focus {
+  color: var(--color-primary-light);
+  outline: none;
+}
+
+.footer-bottom {
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+}
+
 .footer-bottom .footer-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-lg);
   padding: 0;
 }
+
 .footer-bottom p {
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
   margin: 0;
 }
 
-/* Responsive / Mobile */
 @media (max-width: 768px) {
   .footer-container {
-    padding: 0 16px;
     flex-direction: column;
-    gap: 32px;
     align-items: center;
-  }
-
-  .footer-brand h3 {
-    font-size: 20px;
+    text-align: center;
   }
 
   .footer-links {
-    gap: 32px;
+    gap: var(--spacing-2xl);
     justify-content: center;
+    width: 100%;
   }
-
+  
   .footer-section {
-    text-align: center;
-    min-width: auto;
+    align-items: center;
   }
 
   .footer-bottom .footer-container {
     flex-direction: column;
     text-align: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
   }
 }
