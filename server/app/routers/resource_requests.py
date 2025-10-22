@@ -18,6 +18,7 @@ from app.schemas import (
     ResourceRequestCreate, ResourceRequestResponse, 
     ResourceRequestUpdate, ResourceRequestStatusUpdate
 )
+from app.auth import get_current_active_user
 
 router = APIRouter(prefix="/resource-requests", tags=["resource-requests"])
 
@@ -195,12 +196,14 @@ def update_resource_request(
 def update_request_status(
     request_id: int,
     status_update: ResourceRequestStatusUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
-    Update the status of a resource request
-    Typically used by admins to approve/reject requests
+    Update the status of a resource request (Admin only)
     """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
     
     db_request = db.query(ResourceRequest).filter(
         ResourceRequest.request_id == request_id
@@ -214,13 +217,12 @@ def update_request_status(
     
     # Update status and related fields
     db_request.status = status_update.status
+    db_request.approved_by = current_user.user_id
     
-    if status_update.approved_by:
-        db_request.approved_by = status_update.approved_by
-        if status_update.status == RequestStatus.APPROVED:
-            db_request.approved_date = datetime.now()
-        elif status_update.status == RequestStatus.FULFILLED:
-            db_request.fulfilled_date = datetime.now()
+    if status_update.status == RequestStatus.APPROVED:
+        db_request.approved_date = datetime.now()
+    elif status_update.status == RequestStatus.FULFILLED:
+        db_request.fulfilled_date = datetime.now()
     
     if status_update.notes:
         db_request.notes = status_update.notes
@@ -229,6 +231,22 @@ def update_request_status(
     db.refresh(db_request)
     
     return db_request
+
+
+@router.get("/admin/pending", response_model=List[ResourceRequestResponse])
+def get_pending_requests_for_admin(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all pending resource requests for admin review"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    pending_requests = db.query(ResourceRequest).filter(
+        ResourceRequest.status == RequestStatus.PENDING
+    ).order_by(ResourceRequest.request_date.asc()).all()
+    
+    return pending_requests
 
 @router.get("/coordinator/{coordinator_id}", response_model=List[ResourceRequestResponse])
 def get_coordinator_requests(

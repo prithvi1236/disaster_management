@@ -9,7 +9,7 @@ import random
 from app.database import SessionLocal
 from app.models import (
     User, UserRole, Disaster, Camp, CampCoordinator, Donation, Volunteer, 
-    ResourceRequest, RequestStatus, VolunteerAssignment
+    ResourceRequest, RequestStatus, VolunteerAssignment, VolunteerStatus
 )
 
 def hash_password(password: str) -> str:
@@ -438,7 +438,7 @@ def create_demo_volunteers(db: Session, disasters):
             "address": f"Address {i+1}, Delhi, India",
             "emergency_contact": f"+91-9876502{i+1:03d}",
             "background_check": random.choice([True, False]),
-            "status": random.choice(["Active", "Available", "Assigned"]),
+            "status": VolunteerStatus.PENDING,  # All volunteers start as pending
             "disaster_id": random.choice(disasters).disaster_id if random.choice([True, False]) else None
         })
         
@@ -536,6 +536,25 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
     
     assignments_data = []
     
+    # First, approve some volunteers so they can be assigned
+    volunteers_to_assign = [0, 1, 2, 4, 5, 6, 8, 9, 10, 13]  # Indices of volunteers to approve and assign
+    
+    for idx in volunteers_to_assign:
+        if idx < len(volunteers):
+            volunteer = volunteers[idx]
+            volunteer.status = VolunteerStatus.APPROVED
+            volunteer.approved_by = admin_user.user_id
+            volunteer.approved_date = datetime.now() - timedelta(days=random.randint(5, 20))
+    
+    # Also approve some additional volunteers without assignments (available for assignment)
+    additional_approved = [14, 15, 16, 17, 18, 19, 20]  # More volunteers to approve but not assign
+    for idx in additional_approved:
+        if idx < len(volunteers):
+            volunteer = volunteers[idx]
+            volunteer.status = VolunteerStatus.APPROVED
+            volunteer.approved_by = admin_user.user_id
+            volunteer.approved_date = datetime.now() - timedelta(days=random.randint(1, 15))
+    
     # Assign some volunteers to specific camps with roles
     assignments = [
         {"volunteer_idx": 0, "camp_idx": 0, "role": "Medical Support", "status": "Active"},  # Dr. Arjun to Kochi
@@ -555,6 +574,9 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
             volunteer = volunteers[assignment["volunteer_idx"]]
             camp = camps[assignment["camp_idx"]]
             
+            # Update volunteer status to ASSIGNED
+            volunteer.status = VolunteerStatus.ASSIGNED
+            
             assignment_data = {
                 "volunteer_id": volunteer.volunteer_id,
                 "camp_id": camp.camp_id,
@@ -569,6 +591,8 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
             
             if assignment["status"] == "Completed":
                 assignment_data["end_date"] = datetime.now() - timedelta(days=random.randint(1, 5))
+                # If assignment is completed, set volunteer back to APPROVED (available for new assignment)
+                volunteer.status = VolunteerStatus.APPROVED
             
             assignments_data.append(assignment_data)
     

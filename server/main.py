@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database import create_tables, seed_demo_data
-from app.routers import disasters, camps, donations, volunteers, coordinators, resource_requests
+from app.routers import disasters, camps, donations, volunteers, coordinators, resource_requests, auth, statistics
 
 
 @asynccontextmanager
@@ -33,6 +33,8 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api", tags=["authentication"])
+app.include_router(statistics.router, prefix="/api", tags=["statistics"])
 app.include_router(disasters.router, prefix="/api", tags=["disasters"])
 app.include_router(camps.router, prefix="/api", tags=["camps"])
 app.include_router(donations.router, prefix="/api", tags=["donations"])

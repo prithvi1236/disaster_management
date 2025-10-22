@@ -13,7 +13,12 @@ import DisasterList from './pages/DisasterList.jsx';
 import DisasterDetail from './pages/DisasterDetail.jsx';
 import CampDetail from './pages/CampDetail.jsx';
 import VolunteerSignup from './pages/VolunteerSignup.jsx';
+import VolunteerPortal from './pages/VolunteerPortal.jsx';
 import DonationForm from './pages/DonationForm.jsx';
+import AdminVolunteers from './pages/AdminVolunteers.jsx';
+import AdminRequests from './pages/AdminRequests.jsx';
+import AdminDisasters from './pages/AdminDisasters.jsx';
+import CoordinatorVolunteers from './pages/CoordinatorVolunteers.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 export default function App() {
@@ -31,7 +36,36 @@ export default function App() {
           <Route path="/disasters/:id" element={<DisasterDetail />} />
           <Route path="/camps/:id" element={<CampDetail />} />
           <Route path="/volunteer-signup" element={<VolunteerSignup />} />
+          <Route path="/volunteer-portal" element={
+            <ProtectedRoute>
+              <VolunteerPortal />
+            </ProtectedRoute>
+          } />
           <Route path="/donate" element={<DonationForm />} />
+
+          {/* Admin routes */}
+          <Route path="/admin/volunteers" element={
+            <ProtectedRoute>
+              <AdminVolunteers />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/requests" element={
+            <ProtectedRoute>
+              <AdminRequests />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/disasters" element={
+            <ProtectedRoute>
+              <AdminDisasters />
+            </ProtectedRoute>
+          } />
+
+          {/* Coordinator routes */}
+          <Route path="/coordinator/volunteers" element={
+            <ProtectedRoute>
+              <CoordinatorVolunteers />
+            </ProtectedRoute>
+          } />
 
           {/* Protected route */}
           <Route

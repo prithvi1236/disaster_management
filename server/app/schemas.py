@@ -18,6 +18,14 @@ class RequestStatus(str, Enum):
     FULFILLED = "FULFILLED"
 
 
+class VolunteerStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    ASSIGNED = "ASSIGNED"
+    INACTIVE = "INACTIVE"
+
+
 # User Schemas
 class UserBase(BaseModel):
     username: str
@@ -167,7 +175,7 @@ class VolunteerBase(BaseModel):
     availability: Optional[str] = None
     emergency_contact: Optional[str] = None
     background_check: Optional[bool] = False
-    status: Optional[str] = "Active"
+    status: Optional[VolunteerStatus] = VolunteerStatus.PENDING
     disaster_id: Optional[int] = None
 
 
@@ -184,12 +192,15 @@ class VolunteerUpdate(BaseModel):
     availability: Optional[str] = None
     emergency_contact: Optional[str] = None
     background_check: Optional[bool] = None
-    status: Optional[str] = None
+    status: Optional[VolunteerStatus] = None
     disaster_id: Optional[int] = None
 
 
 class Volunteer(VolunteerBase):
     volunteer_id: int
+    approved_by: Optional[int] = None
+    approved_date: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -388,3 +399,14 @@ class AdminVolunteerAssignmentCreate(BaseModel):
     role: Optional[str] = None
     start_date: Optional[datetime] = None
     notes: Optional[str] = None
+
+
+# Admin-specific volunteer management
+class VolunteerApprovalUpdate(BaseModel):
+    status: VolunteerStatus
+    rejection_reason: Optional[str] = None
+
+
+class PendingVolunteer(Volunteer):
+    """Volunteer with additional info for admin review"""
+    days_pending: Optional[int] = None

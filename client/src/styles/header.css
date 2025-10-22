@@ -139,3 +139,40 @@
   .header-container { padding: 0 20px; }
   .header-nav { gap: 24px; }
 }
+.user-greeting {
+  color: #666;
+  font-size: 0.9rem;
+  margin-right: 1rem;
+}
+
+.nav-button {
+  background: none;
+  border: none;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.nav-button:hover {
+  background-color: rgba(0,0,0,0.1);
+}
+
+.nav-button.nav-link--primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+.nav-button.nav-link--primary:hover {
+  background-color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .user-greeting {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}

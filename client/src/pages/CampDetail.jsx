@@ -1,91 +1,113 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { fetchCamp } from '../services/api.js';
 import '../styles/campDetail.css';
 
 export default function CampDetail() {
   const { id } = useParams();
   const [camp, setCamp] = useState(null);
-  const [assignments, setAssignments] = useState([]);
-  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const base = import.meta.env.VITE_API_BASE_URL || '';
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    async function loadCampData() {
-      setLoading(true);
-      try {
-        const [cRes, aRes, rRes] = await Promise.all([
-          fetch(`${base}/camps/${id}`).then(r => r.json()),
-          fetch(`${base}/assignments?camp_id=${id}`).then(r => r.json()),
-          fetch(`${base}/requests?camp_id=${id}`).then(r => r.json())
-        ]);
-
-        setCamp(cRes);
-        setAssignments(Array.isArray(aRes) ? aRes : aRes.data || []);
-        setRequests(Array.isArray(rRes) ? rRes : rRes.data || []);
-      } catch (err) {
-        console.error('Failed to load camp data', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadCampData();
-  }, [id, base]);
+  }, [id]);
 
-  if (loading) return <div className="camp-detail container"><p>Loading...</p></div>;
-  if (!camp) return <div className="camp-detail container"><p>Camp not found.</p></div>;
+  const loadCampData = async () => {
+    try {
+      setLoading(true);
+      const campData = await fetchCamp(id);
+      setCamp(campData);
+    } catch (err) {
+      setError(err.message || 'Failed to load camp details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="camp-detail container">
+        <p>Loading camp details...</p>
+      </div>
+    );
+  }
+
+  if (error || !camp) {
+    return (
+      <div className="camp-detail container">
+        <h2>Camp Not Found</h2>
+        <p className="error">{error || 'The requested camp could not be found.'}</p>
+        <Link to="/disasters" className="btn btn-primary">
+          ← Back to Disasters
+        </Link>
+      </div>
+    );
+  }
+
+  const occupancyPercentage = camp.capacity ? Math.round((camp.occupancy / camp.capacity) * 100) : 0;
 
   return (
     <div className="camp-detail container">
+      <div className="breadcrumb">
+        <Link to="/disasters" className="breadcrumb-link">Disasters</Link>
+        <span className="breadcrumb-separator">›</span>
+        <span className="breadcrumb-current">{camp.name}</span>
+      </div>
+
       <div className="camp-header">
-        <div>
-          <h2>{camp.name}</h2>
-          <p className="text-muted">{camp.location}</p>
+        <div className="camp-info">
+          <h1>{camp.name}</h1>
+          <p className="camp-location">📍 {camp.location}</p>
+          {camp.contact_info && (
+            <p className="camp-contact">📞 {camp.contact_info}</p>
+          )}
         </div>
-        <div>
-          <p className="text-muted">Capacity: {camp.capacity}</p>
-          <p className="text-muted">Occupancy: {camp.occupancy}</p>
-          <p className="text-muted">Contact: {camp.contact_number}</p>
+        
+        <div className="camp-stats">
+          <div className="stat-item">
+            <span className="stat-label">Capacity</span>
+            <span className="stat-value">{camp.capacity}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Occupancy</span>
+            <span className="stat-value">{camp.occupancy}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Availability</span>
+            <span className="stat-value">{occupancyPercentage}% Full</span>
+          </div>
         </div>
       </div>
 
-      <section className="section">
-        <h3 className="section-title">Assigned Volunteers</h3>
-        {assignments.length === 0 ? (
-          <p className="text-muted">No volunteers assigned yet.</p>
-        ) : (
-          <div className="assign-list">
-            {assignments.map(a => (
-              <div key={a.assignment_id} className="card">
-                <div className="flex-between">
-                  <div>
-                    <strong>{a.name || a.volunteer_name || 'Volunteer'}</strong>
-                    <div className="text-muted">{a.role} • {a.assigned_date}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {camp.facilities && (
+        <div className="camp-facilities">
+          <h3>Available Facilities</h3>
+          <p>{camp.facilities}</p>
+        </div>
+      )}
 
-      <section className="section">
-        <h3 className="section-title">Resource Requests</h3>
-        {requests.length === 0 ? (
-          <p className="text-muted">No requests submitted.</p>
-        ) : (
-          <div className="detail-list">
-            {requests.map(r => (
-              <div key={r.request_id} className="detail-card">
-                <p><strong>{r.resource_type}</strong> — Qty: {r.quantity}</p>
-                <p className="text-muted">Status: {r.status}</p>
-                <p className="text-muted">Requested: {r.requested_date}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="occupancy-visual">
+        <h3>Occupancy Status</h3>
+        <div className="occupancy-bar-large">
+          <div 
+            className="occupancy-fill-large"
+            style={{ width: `${Math.min(occupancyPercentage, 100)}%` }}
+          />
+        </div>
+        <p className="occupancy-text">
+          {camp.occupancy} of {camp.capacity} spaces occupied ({occupancyPercentage}%)
+        </p>
+      </div>
+
+      <div className="camp-actions">
+        <Link to="/volunteer-signup" className="btn btn-primary">
+          Volunteer at This Camp
+        </Link>
+        <Link to="/donate" className="btn btn-secondary">
+          Donate Resources
+        </Link>
+      </div>
     </div>
   );
 }

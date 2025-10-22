@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app import models, schemas
+from app.auth import get_current_active_user
 
 router = APIRouter()
 
@@ -24,9 +25,19 @@ async def get_disaster(disaster_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/disasters", response_model=schemas.Disaster, status_code=status.HTTP_201_CREATED)
-async def create_disaster(disaster: schemas.DisasterCreate, db: Session = Depends(get_db)):
-    """Create a new disaster"""
-    db_disaster = models.Disaster(**disaster.dict())
+async def create_disaster(
+    disaster: schemas.DisasterCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Create a new disaster (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    disaster_data = disaster.dict()
+    disaster_data['created_by'] = current_user.user_id
+    
+    db_disaster = models.Disaster(**disaster_data)
     db.add(db_disaster)
     db.commit()
     db.refresh(db_disaster)
@@ -37,9 +48,13 @@ async def create_disaster(disaster: schemas.DisasterCreate, db: Session = Depend
 async def update_disaster(
     disaster_id: int, 
     disaster_update: schemas.DisasterUpdate, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
 ):
-    """Update disaster"""
+    """Update disaster (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
     disaster = db.query(models.Disaster).filter(models.Disaster.disaster_id == disaster_id).first()
     if disaster is None:
         raise HTTPException(status_code=404, detail="Disaster not found")
@@ -54,8 +69,15 @@ async def update_disaster(
 
 
 @router.delete("/disasters/{disaster_id}")
-async def delete_disaster(disaster_id: int, db: Session = Depends(get_db)):
-    """Delete disaster"""
+async def delete_disaster(
+    disaster_id: int, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Delete disaster (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
     disaster = db.query(models.Disaster).filter(models.Disaster.disaster_id == disaster_id).first()
     if disaster is None:
         raise HTTPException(status_code=404, detail="Disaster not found")

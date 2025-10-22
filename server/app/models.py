@@ -18,6 +18,14 @@ class RequestStatus(enum.Enum):
     FULFILLED = "FULFILLED"
 
 
+class VolunteerStatus(enum.Enum):
+    PENDING = "PENDING"  # Waiting for admin approval
+    APPROVED = "APPROVED"  # Approved by admin, can be assigned
+    REJECTED = "REJECTED"  # Rejected by admin
+    ASSIGNED = "ASSIGNED"  # Currently assigned to a camp
+    INACTIVE = "INACTIVE"  # Temporarily inactive
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -135,13 +143,17 @@ class Volunteer(Base):
     availability = Column(String(255), nullable=True)
     emergency_contact = Column(String(255), nullable=True)
     background_check = Column(Boolean, default=False)
-    status = Column(String(50), default="Active")
+    status = Column(Enum(VolunteerStatus), default=VolunteerStatus.PENDING, nullable=False)
     disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=True)
+    approved_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who approved
+    approved_date = Column(DateTime, nullable=True)
+    rejection_reason = Column(Text, nullable=True)  # Reason if rejected
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     volunteer_assignments = relationship("VolunteerAssignment", back_populates="volunteer")
+    approved_by_user = relationship("User", foreign_keys=[approved_by])
 
 
 class ResourceRequest(Base):
