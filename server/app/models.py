@@ -1,3 +1,18 @@
+"""
+Database models for the Disaster Management System.
+
+This module defines all SQLAlchemy ORM models representing the core entities
+in the disaster management system including users, disasters, camps, volunteers,
+donations, and various request types.
+
+The models are designed to support:
+- Multi-role user management (Admin, Coordinator, User)
+- Disaster tracking and camp coordination
+- Volunteer registration and assignment workflow
+- Resource and volunteer request management
+- Donation tracking and reporting
+"""
+
 from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -6,12 +21,27 @@ import enum
 
 
 class UserRole(enum.Enum):
+    """
+    User role enumeration defining access levels in the system.
+    
+    - ADMIN: Full system access, can manage all entities
+    - USER: Basic user access, can volunteer and donate
+    - CAMP_COORDINATOR: Can manage assigned camps and make requests
+    """
     ADMIN = "admin"
     USER = "user"
     CAMP_COORDINATOR = "camp_coordinator"
 
 
 class RequestStatus(enum.Enum):
+    """
+    Status enumeration for resource and volunteer requests.
+    
+    - PENDING: Request submitted, awaiting admin review
+    - APPROVED: Request approved by admin, ready for fulfillment
+    - REJECTED: Request rejected by admin
+    - FULFILLED: Request completed and resources/volunteers provided
+    """
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -19,14 +49,42 @@ class RequestStatus(enum.Enum):
 
 
 class VolunteerStatus(enum.Enum):
-    PENDING = "PENDING"  # Waiting for admin approval
-    APPROVED = "APPROVED"  # Approved by admin, can be assigned
-    REJECTED = "REJECTED"  # Rejected by admin
-    ASSIGNED = "ASSIGNED"  # Currently assigned to a camp
-    INACTIVE = "INACTIVE"  # Temporarily inactive
+    """
+    Volunteer status enumeration tracking volunteer lifecycle.
+    
+    - PENDING: Application submitted, awaiting admin approval
+    - APPROVED: Approved by admin, available for assignment
+    - REJECTED: Application rejected by admin
+    - ASSIGNED: Currently assigned to active disaster response
+    - INACTIVE: Temporarily inactive or unavailable
+    """
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    ASSIGNED = "ASSIGNED"
+    INACTIVE = "INACTIVE"
 
 
 class User(Base):
+    """
+    User model representing system users with role-based access control.
+    
+    Supports three user roles:
+    - Admin: Full system management capabilities
+    - Camp Coordinator: Manages assigned relief camps
+    - User: Basic access for volunteers and donors
+    
+    Attributes:
+        user_id: Primary key identifier
+        username: Unique username for authentication
+        email: Unique email address
+        password_hash: Hashed password for security
+        full_name: User's full display name
+        role: User role determining access permissions
+        is_active: Account status flag
+        created_at: Account creation timestamp
+        updated_at: Last modification timestamp
+    """
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
@@ -39,7 +97,7 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Relationships
+    # Relationships - Define what this user has created or manages
     created_disasters = relationship("Disaster", back_populates="created_by_user")
     created_camps = relationship("Camp", back_populates="created_by_user")
     managed_assignments = relationship("VolunteerAssignment", back_populates="assigned_by_user")
@@ -48,49 +106,88 @@ class User(Base):
 
 
 class Disaster(Base):
+    """
+    Disaster model representing natural disasters and emergency events.
+    
+    Tracks disaster events across India including floods, earthquakes, cyclones,
+    droughts, and other natural calamities requiring coordinated response.
+    
+    Attributes:
+        disaster_id: Primary key identifier
+        name: Descriptive name of the disaster event
+        type: Category of disaster (Flood, Earthquake, Cyclone, etc.)
+        location: Geographic location affected
+        severity_level: Impact assessment (Low, Medium, High, Critical)
+        status: Current disaster status (Active, Ongoing, Recovery, Closed)
+        start_date: When the disaster event began
+        end_date: When the disaster was declared over (optional)
+        description: Detailed description of the disaster
+        created_by: Admin user who created the disaster record
+        created_at: Record creation timestamp
+        updated_at: Last modification timestamp
+    """
     __tablename__ = "disasters"
 
     disaster_id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)
-    type = Column(String(100), nullable=False)
+    type = Column(String(100), nullable=False)  # Flood, Earthquake, Cyclone, etc.
     location = Column(String(255), nullable=False)
-    severity_level = Column(String(50), nullable=False)
-    status = Column(String(50), default="Active")
+    severity_level = Column(String(50), nullable=False)  # Low, Medium, High, Critical
+    status = Column(String(50), default="Active")  # Active, Ongoing, Recovery, Closed
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=True)
     description = Column(Text, nullable=True)
-    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who created
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Relationships
-    camps = relationship("Camp", back_populates="disaster")
+    # Relationships - All entities associated with this disaster
+    camps = relationship("Camp", back_populates="disaster", cascade="all, delete-orphan")
     donations = relationship("Donation", back_populates="disaster")
     resource_requests = relationship("ResourceRequest", back_populates="disaster")
     created_by_user = relationship("User", back_populates="created_disasters")
 
 
 class Camp(Base):
+    """
+    Relief camp model representing disaster response camps.
+    
+    Manages relief camps established for disaster victims, including
+    capacity management, facility tracking, and coordinator assignment.
+    
+    Attributes:
+        camp_id: Primary key identifier
+        name: Camp name/identifier
+        location: Geographic location of the camp
+        capacity: Maximum number of people the camp can accommodate
+        occupancy: Current number of people in the camp
+        contact_info: Contact information for the camp
+        facilities: Available facilities and services
+        disaster_id: Associated disaster (foreign key)
+        created_by: Admin user who created the camp record
+        created_at: Camp record creation timestamp
+        updated_at: Last modification timestamp
+    """
     __tablename__ = "camps"
 
     camp_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    location = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False, index=True)  # Indexed for search
+    location = Column(String(255), nullable=False, index=True)  # Indexed for location queries
     capacity = Column(Integer, nullable=False)
     occupancy = Column(Integer, default=0)
     contact_info = Column(String(255), nullable=True)
     facilities = Column(Text, nullable=True)
-    disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)  # Admin who created
-    created_at = Column(DateTime, server_default=func.now())
+    disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=False, index=True)  # Indexed for joins
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), index=True)  # Indexed for date queries
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Relationships
+    # Relationships with proper cascade for data integrity
     disaster = relationship("Disaster", back_populates="camps")
-    resource_requests = relationship("ResourceRequest", back_populates="camp")
+    resource_requests = relationship("ResourceRequest", back_populates="camp", cascade="all, delete-orphan")
     volunteer_assignments = relationship("VolunteerAssignment", back_populates="camp")
     created_by_user = relationship("User", back_populates="created_camps")
-    coordinators = relationship("CampCoordinator", back_populates="camp")
+    coordinators = relationship("CampCoordinator", back_populates="camp", cascade="all, delete-orphan")
 
 
 class CampCoordinator(Base):

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/auth.js';
 import '../styles/login.css';
@@ -15,20 +15,28 @@ export default function Login() {
     setError('');
     setLoading(true);
 
+    // Basic client-side validation
+    if (!username.trim() || !password.trim()) {
+      setError('Please enter both username and password');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await login({ username, password });
+      const result = await login({ username: username.trim(), password });
       if (result.success) {
-        // Redirect based on user role
-        if (result.user.role === 'user') {
-          navigate('/volunteer-portal');
-        } else {
-          navigate('/dashboard');
-        }
+        // Redirect based on user role with proper navigation
+        const redirectPath = result.user.role === 'user' ? '/volunteer-portal' : '/dashboard';
+        navigate(redirectPath, { replace: true });
       } else {
-        setError(result.error);
+        setError(result.error || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
-      setError(err.message || 'Login failed');
+      // Handle different types of errors
+      const errorMessage = err.message.includes('Network') 
+        ? 'Unable to connect to server. Please check your internet connection.'
+        : err.message || 'Login failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

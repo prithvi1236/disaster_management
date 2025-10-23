@@ -456,3 +456,17 @@ class VolunteerApprovalUpdate(BaseModel):
 class PendingVolunteer(Volunteer):
     """Volunteer with additional info for admin review"""
     days_pending: Optional[int] = None
+
+
+# Camp with disaster information for volunteer assignment
+class CampWithDisaster(BaseModel):
+    camp_id: int
+    camp_name: str
+    camp_location: str
+    disaster_id: int
+    disaster_name: str
+    disaster_type: str
+    disaster_location: str
+
+    class Config:
+        from_attributes = True

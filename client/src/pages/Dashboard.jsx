@@ -20,6 +20,7 @@ export default function Dashboard() {
       setUser(currentUser);
 
       if (currentUser) {
+        // Use Promise.all for parallel API calls to improve performance
         const [dashboardStats, recentActivity] = await Promise.all([
           fetchDashboardStats(),
           fetchRecentActivity(),
@@ -28,8 +29,13 @@ export default function Dashboard() {
         setActivity(recentActivity);
       }
     } catch (err) {
-      setError("Failed to load dashboard data");
-      console.error(err);
+      // Provide user-friendly error message based on error type
+      const errorMessage = err.message.includes('Network') 
+        ? "Unable to connect to server. Please check your internet connection."
+        : "Failed to load dashboard data. Please try refreshing the page.";
+      
+      setError(errorMessage);
+      console.error("Dashboard data loading error:", err);
     } finally {
       setLoading(false);
     }

@@ -276,7 +276,7 @@ async def get_available_volunteers(
     return available_volunteers
 
 
-@router.get("/camps/with-disasters", response_model=List[dict])
+@router.get("/volunteers/camps/with-disasters", response_model=List[schemas.CampWithDisaster])
 async def get_camps_with_disasters(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
@@ -295,7 +295,7 @@ async def get_camps_with_disasters(
             "camp_location": camp.location,
             "disaster_id": camp.disaster_id,
             "disaster_name": camp.disaster.name,
-            "disaster_type": camp.disaster.disaster_type,
+            "disaster_type": camp.disaster.type,
             "disaster_location": camp.disaster.location
         })
     
