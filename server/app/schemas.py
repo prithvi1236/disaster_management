@@ -401,6 +401,52 @@ class AdminVolunteerAssignmentCreate(BaseModel):
     notes: Optional[str] = None
 
 
+# Volunteer Request Schemas
+class VolunteerRequestBase(BaseModel):
+    title: str
+    description: str
+    volunteer_type: str
+    skills_required: Optional[str] = None
+    number_needed: int
+    priority_level: Optional[str] = "Medium"
+    duration_days: Optional[int] = None
+
+
+class VolunteerRequestCreate(VolunteerRequestBase):
+    disaster_id: int
+    camp_id: int
+
+
+class VolunteerRequestUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    volunteer_type: Optional[str] = None
+    skills_required: Optional[str] = None
+    number_needed: Optional[int] = None
+    priority_level: Optional[str] = None
+    duration_days: Optional[int] = None
+    status: Optional[RequestStatus] = None
+    notes: Optional[str] = None
+
+
+class VolunteerRequestResponse(VolunteerRequestBase):
+    request_id: int
+    disaster_id: int
+    camp_id: int
+    requested_by_coordinator_id: int
+    approved_by: Optional[int] = None
+    status: RequestStatus
+    request_date: datetime
+    approved_date: Optional[datetime] = None
+    fulfilled_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Admin-specific volunteer management
 class VolunteerApprovalUpdate(BaseModel):
     status: VolunteerStatus

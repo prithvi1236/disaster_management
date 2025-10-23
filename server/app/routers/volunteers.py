@@ -199,3 +199,104 @@ async def get_volunteer_assignments(
     ).order_by(models.VolunteerAssignment.assignment_date.desc()).all()
     
     return assignments
+
+
+@router.post("/volunteers/assign", response_model=schemas.VolunteerAssignment, status_code=status.HTTP_201_CREATED)
+async def assign_volunteer_to_camp(
+    assignment: schemas.AdminVolunteerAssignmentCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Assign volunteer to camp (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Verify volunteer exists and is approved
+    volunteer = db.query(models.Volunteer).filter(models.Volunteer.volunteer_id == assignment.volunteer_id).first()
+    if not volunteer:
+        raise HTTPException(status_code=404, detail="Volunteer not found")
+    
+    if volunteer.status not in [models.VolunteerStatus.APPROVED, models.VolunteerStatus.ASSIGNED]:
+        raise HTTPException(status_code=400, detail="Volunteer must be approved before assignment")
+    
+    # Verify disaster exists
+    disaster = db.query(models.Disaster).filter(models.Disaster.disaster_id == assignment.disaster_id).first()
+    if not disaster:
+        raise HTTPException(status_code=404, detail="Disaster not found")
+    
+    # Verify camp exists (if provided)
+    if assignment.camp_id:
+        camp = db.query(models.Camp).filter(models.Camp.camp_id == assignment.camp_id).first()
+        if not camp:
+            raise HTTPException(status_code=404, detail="Camp not found")
+    
+    # Check if volunteer is already assigned to an active assignment
+    existing_assignment = db.query(models.VolunteerAssignment).filter(
+        models.VolunteerAssignment.volunteer_id == assignment.volunteer_id,
+        models.VolunteerAssignment.status == "Active"
+    ).first()
+    
+    if existing_assignment:
+        raise HTTPException(status_code=400, detail="Volunteer is already assigned to an active assignment")
+    
+    # Create assignment
+    assignment_data = assignment.dict()
+    assignment_data['assigned_by'] = current_user.user_id
+    assignment_data['assignment_date'] = datetime.now()
+    
+    if not assignment_data.get('start_date'):
+        assignment_data['start_date'] = datetime.now()
+    
+    db_assignment = models.VolunteerAssignment(**assignment_data)
+    db.add(db_assignment)
+    
+    # Update volunteer status to ASSIGNED
+    volunteer.status = models.VolunteerStatus.ASSIGNED
+    
+    db.commit()
+    db.refresh(db_assignment)
+    
+    return db_assignment
+
+
+@router.get("/volunteers/available", response_model=List[schemas.Volunteer])
+async def get_available_volunteers(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get volunteers available for assignment (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get approved volunteers who are not currently assigned
+    available_volunteers = db.query(models.Volunteer).filter(
+        models.Volunteer.status == models.VolunteerStatus.APPROVED
+    ).all()
+    
+    return available_volunteers
+
+
+@router.get("/camps/with-disasters", response_model=List[dict])
+async def get_camps_with_disasters(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get camps with their disaster information for assignment purposes (Admin only)"""
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    camps = db.query(models.Camp).join(models.Disaster).all()
+    
+    result = []
+    for camp in camps:
+        result.append({
+            "camp_id": camp.camp_id,
+            "camp_name": camp.name,
+            "camp_location": camp.location,
+            "disaster_id": camp.disaster_id,
+            "disaster_name": camp.disaster.name,
+            "disaster_type": camp.disaster.disaster_type,
+            "disaster_location": camp.disaster.location
+        })
+    
+    return result

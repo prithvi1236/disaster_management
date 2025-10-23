@@ -115,6 +115,7 @@ class CampCoordinator(Base):
     coordinator_user = relationship("User", back_populates="coordinated_camps")
     camp = relationship("Camp", back_populates="coordinators")
     resource_requests = relationship("ResourceRequest", back_populates="requested_by_coordinator")
+    volunteer_requests = relationship("VolunteerRequest", back_populates="requested_by_coordinator")
 
 
 class Donation(Base):
@@ -222,3 +223,41 @@ class VolunteerAssignment(Base):
     volunteer = relationship("Volunteer", back_populates="volunteer_assignments")
     camp = relationship("Camp", back_populates="volunteer_assignments")
     assigned_by_user = relationship("User", back_populates="managed_assignments")
+
+
+class VolunteerRequest(Base):
+    __tablename__ = "volunteer_requests"
+
+    request_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    volunteer_type = Column(String(100), nullable=False)  # Medical, Rescue, Logistics, etc.
+    skills_required = Column(Text, nullable=True)  # Specific skills needed
+    number_needed = Column(Integer, nullable=False)
+    priority_level = Column(String(50), default="Medium")  # Low, Medium, High, Critical
+    duration_days = Column(Integer, nullable=True)  # Expected duration in days
+    status = Column(Enum(RequestStatus), default=RequestStatus.PENDING, nullable=False)
+    
+    # Camp and disaster info
+    disaster_id = Column(Integer, ForeignKey("disasters.disaster_id"), nullable=False)
+    camp_id = Column(Integer, ForeignKey("camps.camp_id"), nullable=False)
+    
+    # Who made the request - camp coordinator
+    requested_by_coordinator_id = Column(Integer, ForeignKey("camp_coordinators.coordinator_id"), nullable=False)
+    
+    # Admin approval
+    approved_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    
+    request_date = Column(DateTime, server_default=func.now())
+    approved_date = Column(DateTime, nullable=True)
+    fulfilled_date = Column(DateTime, nullable=True)
+    
+    notes = Column(Text, nullable=True)  # Admin notes
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    disaster = relationship("Disaster")
+    camp = relationship("Camp")
+    requested_by_coordinator = relationship("CampCoordinator")
+    approved_by_user = relationship("User", foreign_keys=[approved_by])

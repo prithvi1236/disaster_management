@@ -116,6 +116,54 @@ export async function fetchVolunteerAssignments(volunteerId) {
   return request(`/volunteers/${volunteerId}/assignments`, { method: 'GET' });
 }
 
+export async function assignVolunteerToCamp(assignment) {
+  return request('/volunteers/assign', {
+    method: 'POST',
+    body: JSON.stringify(assignment)
+  });
+}
+
+export async function fetchAvailableVolunteers() {
+  return request('/volunteers/available', { method: 'GET' });
+}
+
+export async function fetchCampsWithDisasters() {
+  return request('/camps/with-disasters', { method: 'GET' });
+}
+
+// Volunteer Requests (for coordinators)
+export async function createVolunteerRequest(volunteerRequest) {
+  return request('/volunteer-requests', {
+    method: 'POST',
+    body: JSON.stringify(volunteerRequest)
+  });
+}
+
+export async function fetchVolunteerRequests(filters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      params.append(key, value);
+    }
+  });
+  
+  const queryString = params.toString();
+  const url = queryString ? `/volunteer-requests?${queryString}` : '/volunteer-requests';
+  
+  return request(url, { method: 'GET' });
+}
+
+export async function updateVolunteerRequest(requestId, updates) {
+  return request(`/volunteer-requests/${requestId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  });
+}
+
+export async function deleteVolunteerRequest(requestId) {
+  return request(`/volunteer-requests/${requestId}`, { method: 'DELETE' });
+}
+
 // Admin-specific APIs
 export async function fetchPendingVolunteers() {
   return request('/volunteers/pending', { method: 'GET' });
@@ -164,6 +212,10 @@ export async function getCoordinatorCamps(userId) {
 
 export async function getCoordinatorRequests(userId) {
   return request(`/coordinators/user/${userId}/requests`, { method: 'GET' });
+}
+
+export async function getMyCamp() {
+  return request('/coordinators/my-camp', { method: 'GET' });
 }
 
 // Admin coordinator management APIs

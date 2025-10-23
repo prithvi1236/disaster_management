@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
+from app.auth import get_current_active_user
+
 from app.database import get_db
 from app.models import CampCoordinator, User, UserRole, Camp, ResourceRequest
 from app.schemas import (
@@ -110,6 +112,39 @@ def get_coordinators(
     
     coordinators = query.offset(skip).limit(limit).all()
     return coordinators
+
+
+@router.get("/my-camp")
+def get_my_camp(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get current coordinator's camp information"""
+    if current_user.role != UserRole.CAMP_COORDINATOR:
+        raise HTTPException(status_code=403, detail="Camp Coordinator access required")
+    
+    # Get coordinator record
+    coordinator = db.query(CampCoordinator).filter(
+        CampCoordinator.user_id == current_user.user_id,
+        CampCoordinator.is_active == True
+    ).first()
+    
+    if not coordinator:
+        raise HTTPException(status_code=404, detail="Coordinator assignment not found")
+    
+    # Get camp information
+    camp = db.query(Camp).filter(Camp.camp_id == coordinator.camp_id).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail="Camp not found")
+    
+    return {
+        "camp_id": camp.camp_id,
+        "camp_name": camp.name,
+        "camp_location": camp.location,
+        "disaster_id": camp.disaster_id,
+        "coordinator_id": coordinator.coordinator_id
+    }
+
 
 @router.get("/{coordinator_id}", response_model=CampCoordinatorResponse)
 def get_coordinator(coordinator_id: int, db: Session = Depends(get_db)):
@@ -355,3 +390,5 @@ def get_coordinator_user_requests(
     ).order_by(ResourceRequest.request_date.desc()).all()
     
     return requests
+
+

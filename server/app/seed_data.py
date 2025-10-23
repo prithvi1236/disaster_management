@@ -9,7 +9,7 @@ import random
 from app.database import SessionLocal
 from app.models import (
     User, UserRole, Disaster, Camp, CampCoordinator, Donation, Volunteer, 
-    ResourceRequest, RequestStatus, VolunteerAssignment, VolunteerStatus
+    ResourceRequest, RequestStatus, VolunteerAssignment, VolunteerStatus, VolunteerRequest
 )
 
 def hash_password(password: str) -> str:
@@ -668,6 +668,101 @@ def create_demo_volunteer_assignments(db: Session, volunteers, camps, disasters,
     
     return created_assignments
 
+
+def create_demo_volunteer_requests(db: Session, coordinators, camps, disasters):
+    """Create sample volunteer requests from coordinators"""
+    
+    volunteer_requests_data = [
+        {
+            "coordinator_idx": 0,  # First coordinator
+            "title": "Medical Staff Needed for Emergency Care",
+            "description": "We urgently need qualified medical professionals to assist with patient care in our relief camp. The camp is experiencing high patient volume due to injuries from the recent disaster.",
+            "volunteer_type": "Medical",
+            "skills_required": "Medical degree, First Aid certification, Emergency care experience",
+            "number_needed": 3,
+            "priority_level": "Critical",
+            "duration_days": 14
+        },
+        {
+            "coordinator_idx": 1,  # Second coordinator
+            "title": "Food Distribution Volunteers Required",
+            "description": "Need volunteers to help with daily food distribution to disaster victims. Must be able to work in shifts and handle food safely.",
+            "volunteer_type": "Food Distribution",
+            "skills_required": "Food handling experience preferred, Physical fitness for lifting",
+            "number_needed": 5,
+            "priority_level": "High",
+            "duration_days": 10
+        },
+        {
+            "coordinator_idx": 0,  # First coordinator (multiple requests)
+            "title": "Logistics Coordinators for Supply Management",
+            "description": "Seeking experienced logistics personnel to manage incoming supplies and coordinate distribution efforts.",
+            "volunteer_type": "Logistics",
+            "skills_required": "Supply chain management, Inventory management, Leadership skills",
+            "number_needed": 2,
+            "priority_level": "High",
+            "duration_days": 21
+        },
+        {
+            "coordinator_idx": 2,  # Third coordinator if exists
+            "title": "General Support Volunteers",
+            "description": "Need general volunteers to assist with various camp activities including cleaning, setup, and basic assistance to residents.",
+            "volunteer_type": "General Support",
+            "skills_required": "No specific skills required, willingness to help",
+            "number_needed": 8,
+            "priority_level": "Medium",
+            "duration_days": 7
+        }
+    ]
+    
+    created_requests = []
+    for request_data in volunteer_requests_data:
+        coordinator_idx = request_data.pop("coordinator_idx")
+        
+        # Skip if coordinator doesn't exist
+        if coordinator_idx >= len(coordinators):
+            continue
+            
+        coordinator = coordinators[coordinator_idx]
+        
+        # Get the coordinator's camp and disaster
+        camp = None
+        disaster = None
+        for c in camps:
+            if c.camp_id == coordinator.camp_id:
+                camp = c
+                break
+        
+        if camp:
+            for d in disasters:
+                if d.disaster_id == camp.disaster_id:
+                    disaster = d
+                    break
+        
+        if not camp or not disaster:
+            continue
+            
+        # Create the volunteer request
+        volunteer_request = VolunteerRequest(
+            title=request_data["title"],
+            description=request_data["description"],
+            volunteer_type=request_data["volunteer_type"],
+            skills_required=request_data["skills_required"],
+            number_needed=request_data["number_needed"],
+            priority_level=request_data["priority_level"],
+            duration_days=request_data["duration_days"],
+            disaster_id=disaster.disaster_id,
+            camp_id=camp.camp_id,
+            requested_by_coordinator_id=coordinator.coordinator_id,
+            status=RequestStatus.PENDING
+        )
+        
+        db.add(volunteer_request)
+        db.flush()
+        created_requests.append(volunteer_request)
+    
+    return created_requests
+
 def seed_database():
     """Main function to seed the database with demo data"""
     db = SessionLocal()
@@ -707,6 +802,9 @@ def seed_database():
         print("👥 Creating volunteer assignments...")
         volunteer_assignments = create_demo_volunteer_assignments(db, volunteers, camps, disasters, admin_user)
         
+        print("📋 Creating volunteer requests...")
+        volunteer_requests = create_demo_volunteer_requests(db, coordinators, camps, disasters)
+        
         # Commit all changes
         db.commit()
         
@@ -720,6 +818,7 @@ def seed_database():
         print(f"  - {len(volunteers)} volunteers")
         print(f"  - {len(resource_requests)} resource requests")
         print(f"  - {len(volunteer_assignments)} volunteer assignments")
+        print(f"  - {len(volunteer_requests)} volunteer requests")
         
         print("\n🔑 Demo Login Credentials:")
         print("Admin: username='admin', password='admin123'")

@@ -195,7 +195,13 @@ export default function Dashboard() {
                   Manage My Camp
                 </a>
                 <a href="/coordinator/requests" className="btn btn-warning">
-                  My Requests
+                  Resource Requests
+                </a>
+                <a
+                  href="/coordinator/volunteer-requests"
+                  className="btn btn-success"
+                >
+                  Request Volunteers
                 </a>
                 <a href="/coordinator/volunteers" className="btn btn-secondary">
                   View Volunteers

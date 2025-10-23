@@ -23,6 +23,7 @@ import AdminCoordinators from "./pages/AdminCoordinators.jsx";
 import CoordinatorVolunteers from "./pages/CoordinatorVolunteers.jsx";
 import CoordinatorCamps from "./pages/CoordinatorCamps.jsx";
 import CoordinatorRequests from "./pages/CoordinatorRequests.jsx";
+import CoordinatorVolunteerRequests from "./pages/CoordinatorVolunteerRequests.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
@@ -111,6 +112,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CoordinatorRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/volunteer-requests"
+            element={
+              <ProtectedRoute>
+                <CoordinatorVolunteerRequests />
               </ProtectedRoute>
             }
           />

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getCurrentUser } from '../services/auth.js';
-import { fetchPendingVolunteers, approveVolunteer, fetchApprovedVolunteers } from '../services/api.js';
+import { fetchPendingVolunteers, approveVolunteer, fetchApprovedVolunteers, fetchCampsWithDisasters, assignVolunteerToCamp } from '../services/api.js';
 import '../styles/adminVolunteers.css';
 
 export default function AdminVolunteers() {
@@ -11,6 +11,14 @@ export default function AdminVolunteers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [processingId, setProcessingId] = useState(null);
+  const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+  const [camps, setCamps] = useState([]);
+  const [assignment, setAssignment] = useState({
+    camp_id: '',
+    disaster_id: '',
+    role: '',
+    notes: ''
+  });
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -25,12 +33,14 @@ export default function AdminVolunteers() {
   const loadVolunteers = async () => {
     try {
       setLoading(true);
-      const [pending, approved] = await Promise.all([
+      const [pending, approved, campsData] = await Promise.all([
         fetchPendingVolunteers(),
-        fetchApprovedVolunteers()
+        fetchApprovedVolunteers(),
+        fetchCampsWithDisasters()
       ]);
       setPendingVolunteers(pending);
       setApprovedVolunteers(approved);
+      setCamps(campsData);
     } catch (err) {
       setError('Failed to load volunteers');
     } finally {
@@ -59,6 +69,41 @@ export default function AdminVolunteers() {
     const reason = prompt('Please provide a reason for rejection:');
     if (reason) {
       handleApproval(volunteerId, 'REJECTED', reason);
+    }
+  };
+
+  const handleAssignVolunteer = async (e) => {
+    e.preventDefault();
+    try {
+      await assignVolunteerToCamp({
+        volunteer_id: selectedVolunteer.volunteer_id,
+        disaster_id: parseInt(assignment.disaster_id),
+        camp_id: parseInt(assignment.camp_id),
+        role: assignment.role,
+        notes: assignment.notes
+      });
+      
+      setSelectedVolunteer(null);
+      setAssignment({
+        camp_id: '',
+        disaster_id: '',
+        role: '',
+        notes: ''
+      });
+      loadVolunteers();
+    } catch (err) {
+      setError('Failed to assign volunteer');
+    }
+  };
+
+  const handleCampSelection = (campId) => {
+    const selectedCamp = camps.find(camp => camp.camp_id === parseInt(campId));
+    if (selectedCamp) {
+      setAssignment({
+        ...assignment,
+        camp_id: campId,
+        disaster_id: selectedCamp.disaster_id
+      });
     }
   };
 
@@ -186,7 +231,10 @@ export default function AdminVolunteers() {
                   </div>
 
                   <div className="volunteer-actions">
-                    <button className="btn btn-secondary">
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => setSelectedVolunteer(volunteer)}
+                    >
                       Assign to Camp
                     </button>
                   </div>
@@ -194,6 +242,88 @@ export default function AdminVolunteers() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Assignment Modal */}
+      {selectedVolunteer && (
+        <div className="modal-overlay" onClick={() => setSelectedVolunteer(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Assign Volunteer to Camp</h3>
+              <button 
+                onClick={() => setSelectedVolunteer(null)}
+                className="btn btn-ghost"
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleAssignVolunteer} className="modal-body">
+              <div className="mb-lg">
+                <h4>Volunteer: {selectedVolunteer.name}</h4>
+                <p className="text-muted">Email: {selectedVolunteer.email}</p>
+                {selectedVolunteer.skills && (
+                  <p className="text-muted">Skills: {selectedVolunteer.skills}</p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Select Camp</label>
+                <select
+                  value={assignment.camp_id}
+                  onChange={(e) => handleCampSelection(e.target.value)}
+                  required
+                >
+                  <option value="">Choose a camp...</option>
+                  {camps.map(camp => (
+                    <option key={camp.camp_id} value={camp.camp_id}>
+                      {camp.camp_name} - {camp.camp_location} ({camp.disaster_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Role/Position</label>
+                <select
+                  value={assignment.role}
+                  onChange={(e) => setAssignment({...assignment, role: e.target.value})}
+                  required
+                >
+                  <option value="">Select role...</option>
+                  <option value="Medical Support">Medical Support</option>
+                  <option value="Food Distribution">Food Distribution</option>
+                  <option value="Shelter Management">Shelter Management</option>
+                  <option value="Logistics Coordinator">Logistics Coordinator</option>
+                  <option value="Communication Officer">Communication Officer</option>
+                  <option value="Security Personnel">Security Personnel</option>
+                  <option value="Transportation">Transportation</option>
+                  <option value="General Support">General Support</option>
+                  <option value="Rescue Operations">Rescue Operations</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Notes (Optional)</label>
+                <textarea
+                  value={assignment.notes}
+                  onChange={(e) => setAssignment({...assignment, notes: e.target.value})}
+                  placeholder="Additional notes about the assignment..."
+                  rows="3"
+                />
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" onClick={() => setSelectedVolunteer(null)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Assign Volunteer
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
